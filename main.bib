@@ -58,54 +58,200 @@
 
 
 
-@misc{Authors14,
-  author = {FirstName LastName},
-  title  = {The frobnicatable foo filter},
-  note   = {Face and Gesture submission ID 324. Supplied as supplemental material {\tt fg324.pdf}},
-  year   = 2014
+% ---------------------------------------------------------------------------
+% Every entry checked on 2026-09-30 against arXiv (API), Crossref or the PDF in
+% ../CVCS-AI-Assisted-ID/papers/. See docs/status.md §3.
+% ---------------------------------------------------------------------------
+
+% --- Dataset ---------------------------------------------------------------
+
+@article{wu2019rplan,
+  author  = {Wenming Wu and Xiao-Ming Fu and Rui Tang and Yuhan Wang and Yu-Hao Qi and Ligang Liu},
+  title   = {Data-driven Interior Plan Generation for Residential Buildings},
+  journal = {ACM Transactions on Graphics (Proc. SIGGRAPH Asia)},
+  volume  = {38},
+  number  = {6},
+  pages   = {1--12},
+  year    = {2019},
+  doi     = {10.1145/3355089.3356556}
 }
 
-@misc{Authors14b,
-  author = {FirstName LastName},
-  title  = {Frobnication tutorial},
-  note   = {Supplied as supplemental material {\tt tr.pdf}},
-  year   = 2014
+% --- Floor plans: generation, similarity, other datasets -------------------
+
+@article{hu2020graph2plan,
+  author  = {Ruizhen Hu and Zeyu Huang and Yuhan Tang and Oliver van Kaick and Hao Zhang and Hui Huang},
+  title   = {{Graph2Plan}: Learning Floorplan Generation from Layout Graphs},
+  journal = {ACM Transactions on Graphics (Proc. SIGGRAPH)},
+  volume  = {39},
+  number  = {4},
+  year    = {2020},
+  doi     = {10.1145/3386569.3392391}
 }
 
-@article{Alpher02,
-  author  = {FirstName Alpher},
-  title   = {Frobnication},
-  journal = PAMI,
-  volume  = 12,
-  number  = 1,
-  pages   = {234--778},
-  year    = 2002
-}
-
-@article{Alpher03,
-  author  = {FirstName Alpher and  FirstName Fotheringham-Smythe},
-  title   = {Frobnication revisited},
-  journal = {Journal of Foo},
-  volume  = 13,
-  number  = 1,
-  pages   = {234--778},
-  year    = 2003
-}
-
-@article{Alpher04,
-  author  = {FirstName Alpher and FirstName Fotheringham-Smythe and FirstName Gamow},
-  title   = {Can a machine frobnicate?},
-  journal = {Journal of Foo},
-  volume  = 14,
-  number  = 1,
-  pages   = {234--778},
-  year    = 2004
-}
-
-@inproceedings{Alpher05,
-  author    = {FirstName Alpher and FirstName Gamow},
-  title     = {Can a computer frobnicate?},
+@inproceedings{patil2021layoutgmn,
+  author    = {Akshay Gadi Patil and Manyi Li and Matthew Fisher and Manolis Savva and Hao Zhang},
+  title     = {{LayoutGMN}: Neural Graph Matching for Structural Layout Similarity},
   booktitle = CVPR,
-  pages     = {234--778},
-  year      = 2005
+  pages     = {11043--11052},
+  year      = {2021},
+  doi       = {10.1109/CVPR46437.2021.01090}
+}
+
+@inproceedings{vanengelenburg2025layoutgkn,
+  author    = {Casper van Engelenburg and Jan van Gemert and Seyran Khademi},
+  title     = {{LayoutGKN}: Graph Similarity Learning of Floor Plans},
+  booktitle = BMVC,
+  year      = {2025},
+  note      = {arXiv:2509.03737}
+}
+
+@misc{abouagour2025resplan,
+  author        = {Mohamed Abouagour and Eleftherios Garyfallidis},
+  title         = {{ResPlan}: A Large-Scale Vector-Graph Dataset of 17,000 Residential Floor Plans},
+  year          = {2025},
+  eprint        = {2508.14006},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV}
+}
+
+@inproceedings{kalervo2019cubicasa5k,
+  author    = {Ahti Kalervo and Juha Ylioinas and Markus H{\"a}iki{\"o} and Antti Karhu and Juho Kannala},
+  title     = {{CubiCasa5K}: A Dataset and an Improved Multi-Task Model for Floorplan Image Analysis},
+  booktitle = {Image Analysis (SCIA)},
+  series    = {Lecture Notes in Computer Science},
+  pages     = {28--40},
+  year      = {2019},
+  doi       = {10.1007/978-3-030-20205-7_3}
+}
+
+% --- Vision encoders --------------------------------------------------------
+
+@misc{bolya2025perception,
+  author        = {Daniel Bolya and Po-Yao Huang and Peize Sun and Jang Hyun Cho and Andrea Madotto and Chen Wei and Tengyu Ma and Jiale Zhi and Jathushan Rajasegaran and Hanoona Rasheed and Junke Wang and Marco Monteiro and Hu Xu and Shiyu Dong and Nikhila Ravi and Daniel Li and Piotr Doll{\'a}r and Christoph Feichtenhofer},
+  title         = {Perception Encoder: The Best Visual Embeddings Are Not at the Output of the Network},
+  year          = {2025},
+  eprint        = {2504.13181},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV}
+}
+
+@misc{oquab2024dinov2,
+  author        = {Maxime Oquab and Timoth{\'e}e Darcet and Th{\'e}o Moutakanni and Huy Vo and Marc Szafraniec and Vasil Khalidov and Pierre Fernandez and Daniel Haziza and Francisco Massa and Alaaeldin El-Nouby and Mahmoud Assran and Nicolas Ballas and Wojciech Galuba and Russell Howes and Po-Yao Huang and Shang-Wen Li and Ishan Misra and Michael Rabbat and Vasu Sharma and Gabriel Synnaeve and Hu Xu and Herv{\'e} J{\'e}gou and Julien Mairal and Patrick Labatut and Armand Joulin and Piotr Bojanowski},
+  title         = {{DINOv2}: Learning Robust Visual Features without Supervision},
+  year          = {2024},
+  eprint        = {2304.07193},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV}
+}
+
+@misc{simeoni2025dinov3,
+  author        = {Oriane Sim{\'e}oni and Huy V. Vo and Maximilian Seitzer and Federico Baldassarre and Maxime Oquab and Cijo Jose and Vasil Khalidov and Marc Szafraniec and Seungeun Yi and Micha{\"e}l Ramamonjisoa and Francisco Massa and Daniel Haziza and Luca Wehrstedt and Jianyuan Wang and Timoth{\'e}e Darcet and Th{\'e}o Moutakanni and Leonel Sentana and Claire Roberts and Andrea Vedaldi and Jamie Tolan and John Brandt and Camille Couprie and Julien Mairal and Herv{\'e} J{\'e}gou and Patrick Labatut and Piotr Bojanowski},
+  title         = {{DINOv3}},
+  year          = {2025},
+  eprint        = {2508.10104},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV}
+}
+
+@misc{tschannen2025siglip2,
+  author        = {Michael Tschannen and Alexey Gritsenko and Xiao Wang and Muhammad Ferjad Naeem and Ibrahim Alabdulmohsin and Nikhil Parthasarathy and Talfan Evans and Lucas Beyer and Ye Xia and Basil Mustafa and Olivier H{\'e}naff and Jeremiah Harmsen and Andreas Steiner and Xiaohua Zhai},
+  title         = {{SigLIP} 2: Multilingual Vision-Language Encoders with Improved Semantic Understanding, Localization, and Dense Features},
+  year          = {2025},
+  eprint        = {2502.14786},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV}
+}
+
+@inproceedings{ranzinger2024amradio,
+  author    = {Mike Ranzinger and Greg Heinrich and Jan Kautz and Pavlo Molchanov},
+  title     = {{AM-RADIO}: Agglomerative Vision Foundation Model -- Reduce All Domains Into One},
+  booktitle = CVPR,
+  pages     = {12490--12500},
+  year      = {2024}
+}
+
+@inproceedings{assran2023ijepa,
+  author    = {Mahmoud Assran and Quentin Duval and Ishan Misra and Piotr Bojanowski and Pascal Vincent and Michael Rabbat and Yann LeCun and Nicolas Ballas},
+  title     = {Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture},
+  booktitle = CVPR,
+  pages     = {15619--15629},
+  year      = {2023},
+  doi       = {10.1109/CVPR52729.2023.01499}
+}
+
+@misc{cao2026tipsv2,
+  author        = {Bingyi Cao and Koert Chen and Kevis-Kokitsi Maninis and Kaifeng Chen and Arjun Karpur and Ye Xia and Sahil Dua and Tanmaya Dabral and Guangxing Han and Bohyung Han and Joshua Ainslie and Alex Bewley and Mithun Jacob and Ren{\'e} Wagner and Washington Ramos and Krzysztof Choromanski and Mojtaba Seyedhosseini and Howard Zhou and Andr{\'e} Araujo},
+  title         = {{TIPSv2}: Advancing Vision-Language Pretraining with Enhanced Patch-Text Alignment},
+  year          = {2026},
+  eprint        = {2604.12012},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV}
+}
+
+% --- Graph neural networks and contrastive learning -------------------------
+
+@misc{kipf2017gcn,
+  author        = {Thomas N. Kipf and Max Welling},
+  title         = {Semi-Supervised Classification with Graph Convolutional Networks},
+  year          = {2017},
+  eprint        = {1609.02907},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@inproceedings{hamilton2017graphsage,
+  author    = {William L. Hamilton and Rex Ying and Jure Leskovec},
+  title     = {Inductive Representation Learning on Large Graphs},
+  booktitle = NIPS,
+  year      = {2017}
+}
+
+@misc{brody2022gatv2,
+  author        = {Shaked Brody and Uri Alon and Eran Yahav},
+  title         = {How Attentive are Graph Attention Networks?},
+  year          = {2022},
+  eprint        = {2105.14491},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@misc{oord2019cpc,
+  author        = {Aaron van den Oord and Yazhe Li and Oriol Vinyals},
+  title         = {Representation Learning with Contrastive Predictive Coding},
+  year          = {2019},
+  eprint        = {1807.03748},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+% --- Retrieval components ---------------------------------------------------
+
+@misc{douze2025faiss,
+  author        = {Matthijs Douze and Alexandr Guzhva and Chengqi Deng and Jeff Johnson and Gergely Szilvasy and Pierre-Emmanuel Mazar{\'e} and Maria Lomeli and Lucas Hosseini and Herv{\'e} J{\'e}gou},
+  title         = {The {Faiss} Library},
+  year          = {2025},
+  eprint        = {2401.08281},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@article{radenovic2019gem,
+  author  = {Filip Radenovi{\'c} and Giorgos Tolias and Ond{\v{r}}ej Chum},
+  title   = {Fine-Tuning {CNN} Image Retrieval with No Human Annotation},
+  journal = PAMI,
+  volume  = {41},
+  number  = {7},
+  pages   = {1655--1668},
+  year    = {2019},
+  doi     = {10.1109/TPAMI.2018.2846566}
+}
+
+@inproceedings{jegou2012whitening,
+  author    = {Herv{\'e} J{\'e}gou and Ond{\v{r}}ej Chum},
+  title     = {Negative Evidences and Co-occurrences in Image Retrieval: The Benefit of {PCA} and Whitening},
+  booktitle = ECCV,
+  series    = {Lecture Notes in Computer Science},
+  pages     = {774--787},
+  year      = {2012},
+  doi       = {10.1007/978-3-642-33709-3_55}
 }

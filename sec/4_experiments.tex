@@ -1,0 +1,50 @@
+\section{Experiments and Results}
+\label{sec:experiments}
+
+\subsection{Metrics}
+\label{sec:metrics}
+
+\paragraph{Incomplete queries and robustness metric.}
+\TODO{Three damages at $f\in\{0.25,0.5,0.75\}$: rooms removed with their walls, crop, patch. Self-recovery reciprocal rank $\rightarrow$ AUC over levels $\rightarrow$ $R$ = mean of the three AUCs. Paired bootstrap 95\% CI. PAPER.md \S5.4; project status.md \S38.}
+
+\paragraph{Per-axis relevance (descriptive).}
+\TODO{Composition, topology, geometry; nDCG@10 on the full plan. Descriptive only: circular on every axis. PAPER.md \S5.2--\S5.3, \S5.5.}
+
+\subsection{Dataset and experimental details}
+\label{sec:setup}
+\TODO{Table T1: RPLAN, official splits, shared gallery, 2000 queries (seed 42), valid selects, test read once, exclusions, random floor. Project status.md \S20, \S29.}
+
+\subsection{Results}
+\label{sec:results}
+
+\subsubsection{Ablation}
+\label{sec:ablation}
+\TODO{Ablation table (mean $\pm$ std, pending D1): vision configurations under the three damages; graph; fusion weight $\alpha$ and the two controls. Main test result (T3, project status.md \S53).}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/f_damage_test.pdf}
+  \caption{\TODO{Test split: self-recovery vs.\ fraction of removed rooms for hist, vision, graph and fusion. Source: f\_damage\_test.sources.txt.}}
+  \label{fig:damage_test}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/f_alpha_valid.pdf}
+  \caption{\TODO{Valid split: robustness AUC vs.\ $\alpha$ for the three fused pairs. Source: f\_alpha\_valid.sources.txt.}}
+  \label{fig:alpha}
+\end{figure}
+
+\paragraph{Negative results.}
+\TODO{Wall artifact of the historical room masking (project status.md \S35--\S37); the trained projection head does not transfer to other damages (\S37, \S48); the lost-neighbours marker ties (\S47).}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/f_damage_kinds_valid.pdf}
+  \caption{\TODO{Left: final vision config under the three damages. Right: the wall artifact, same removed rooms with walls kept or erased. Source: f\_damage\_kinds\_valid.sources.txt.}}
+  \label{fig:damage_kinds}
+\end{figure*}
+
+\subsubsection{Qualitative results}
+\label{sec:qualitative}
+\TODO{Qualitative examples by model and on the dataset (\cref{fig:teaser}).}

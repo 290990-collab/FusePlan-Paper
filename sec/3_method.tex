@@ -1,0 +1,23 @@
+\section{Method}
+\label{sec:method}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/f_pipeline.pdf}
+  \caption{\TODO{Pipeline caption: two branches on the same gallery, same queries, same measure; weighted concatenation with $\alpha=0.6$. Source: f\_pipeline.sources.txt.}}
+  \label{fig:pipeline}
+\end{figure*}
+
+\TODO{Overview: the two branches embed the same plans; fusion combines them; everything is evaluated on the same shared gallery (\cref{fig:pipeline}).}
+
+\subsection{Late fusion}
+\label{sec:method_fusion}
+\TODO{Weighted concatenation of the L2-normalised vectors $[\sqrt{\alpha}\,v;\ \sqrt{1-\alpha}\,g]$; $\alpha$ chosen on valid with pre-registered rules ($\alpha^*=0.6$). Project status.md \S49.}
+
+\subsection{Graph branch}
+\label{sec:method_graph}
+\TODO{Room graph from the RPLAN metadata; GATv2 encoder trained with InfoNCE on asymmetric pairs (complete plan vs.\ plan with rooms removed); checkpoint selected on robustness. configs/graph\_models/gat.yaml; project status.md \S45--\S47.}
+
+\subsection{Vision branch}
+\label{sec:method_vision}
+\TODO{Frozen encoder (PE-spatial ViT-B/16) $\rightarrow$ GeM pooling $\rightarrow$ PCA whitening fitted on train $\rightarrow$ FAISS inner-product index. configs/vision\_models/pespatial.yaml, configs/vision\_retrieval.yaml.}
