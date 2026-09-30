@@ -1,17 +1,33 @@
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{Floor-plan datasets.}
-\TODO{RPLAN; CubiCasa5K, ResPlan (out of scope, future work).}
+% Sources: abstracts of the arXiv entries (export.arxiv.org API, read 2026-09-30);
+% ../CVCS-AI-Assisted-ID/papers/{LayoutGMN,LayoutGKN,Graph2Plan,ResPlan,CubiCasa5K,GraphSAGE}.pdf.
+% "Neither addresses incomplete queries": no mention of partial/incomplete queries in the
+% full text of LayoutGMN and LayoutGKN (text search, 2026-09-30).
 
-\paragraph{Graph representations and generation of floor plans.}
-\TODO{Graph2Plan and related graph-based layout models.}
+\paragraph{Floor-plan datasets.}
+RPLAN~\cite{wu2019rplan} provides more than 80{,}000 residential floor plans with room-level annotations, and is widely used for learning on floor plans~\cite{hu2020graph2plan,patil2021layoutgmn,vanengelenburg2025layoutgkn}.
+Its layouts are comparatively simple, with mostly rectangular rooms, a limitation that motivates more recent datasets such as ResPlan~\cite{abouagour2025resplan}, which offers 17{,}000 vector plans with room connectivity; CubiCasa5K~\cite{kalervo2019cubicasa5k} instead targets the parsing of floor-plan images, with 5{,}000 plans densely annotated into more than 80 object categories.
+We use RPLAN because, for the same plans, it provides both a rendered image and a structural record, the two inputs our branches compare.
+
+\paragraph{Floor plans as graphs.}
+Representing a plan as a graph of rooms connected by adjacencies is common in floor-plan generation.
+Graph2Plan~\cite{hu2020graph2plan} generates a floor plan from a layout graph and a building boundary, and obtains its input graphs by retrieving, from RPLAN, plans that match the boundary and the user's room constraints.
+Our graph branch uses the same kind of room graph, built directly from the RPLAN records, as the input of a retrieval encoder rather than of a generator.
 
 \paragraph{Floor-plan retrieval and similarity.}
-\TODO{LayoutGMN, LayoutGKN (graph similarity on RPLAN); other floor-plan CBIR.}
+Retrieving floor plans requires a notion of similarity that is not purely visual.
+LayoutGMN~\cite{patil2021layoutgmn} learns a structural similarity between layouts with an attention-based graph matching network trained on triplets whose labels come from pixel-wise IoU, and evaluates retrieval on RPLAN plans and user-interface designs.
+LayoutGKN~\cite{vanengelenburg2025layoutgkn} postpones the cross-graph interactions to a differentiable graph kernel on the final node embeddings, which makes inference much faster than graph matching, and trains on RPLAN with a similarity based on graph edit distance, which the authors find to correlate with human judgement far better than IoU.
+Both methods learn a similarity between complete plans from a pairwise target.
+Neither addresses incomplete queries, which is the setting we study, and neither compares an image-based and a graph-based representation of the same plans or combines them.
 
 \paragraph{Visual foundation encoders.}
-\TODO{The eight frozen encoders of the ablation; PE-spatial for the final config.}
+Frozen general-purpose encoders are a natural baseline for retrieval on a new image domain.
+We consider self-supervised encoders trained on curated data (DINOv2~\cite{oquab2024dinov2}, DINOv3~\cite{simeoni2025dinov3}), the joint-embedding predictive I-JEPA~\cite{assran2023ijepa}, which predicts the representation of masked target blocks from a context block and is therefore conceptually close to incomplete inputs, vision--language encoders (SigLIP~2~\cite{tschannen2025siglip2}, TIPSv2~\cite{cao2026tipsv2}), the agglomerative AM-RADIO~\cite{ranzinger2024amradio}, distilled from several teachers, and the Perception Encoder~\cite{bolya2025perception}, whose spatially aligned variant is tuned for dense features.
+For global descriptors we follow standard practice in instance retrieval: generalised-mean pooling~\cite{radenovic2019gem}, PCA whitening of the descriptors~\cite{jegou2012whitening} and exact nearest-neighbour search with FAISS~\cite{douze2025faiss}.
 
 \paragraph{Graph neural networks and contrastive learning.}
-\TODO{GCN, GraphSAGE, GATv2; InfoNCE.}
+Graph encoders aggregate information from the neighbourhood of each node: GCN~\cite{kipf2017gcn} with a first-order approximation of spectral convolutions, GraphSAGE~\cite{hamilton2017graphsage} with learned aggregators that generalise inductively to unseen graphs, and GATv2~\cite{brody2022gatv2} with a dynamic attention that fixes the static attention of the original graph attention network.
+We train the graph encoder with the InfoNCE objective~\cite{oord2019cpc}, contrasting positive pairs against in-batch negatives; our positives pair a partial plan with its complete version, so that the learned embedding targets the incomplete-query task directly.

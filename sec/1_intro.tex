@@ -1,23 +1,51 @@
 \section{Introduction}
 \label{sec:intro}
 
+% Sources (../CVCS-AI-Assisted-ID/): teaser figures/f_teaser_valid.sources.txt (query 10340,
+% valid, f=0.5, vision >100, graph 3rd, fusion 1st; selection rule over 423 queries);
+% test results/fusion/select_test.json (auc_means 0: 0.4700, 0.6: 0.6424, 1: 0.3965;
+% star_vs_reference delta 0.1725 [0.1625, 0.1826]);
+% controls results/fusion/complementarity_valid.json (G_F 0.1740, G_C 0.0336),
+% complementarity_visionvision_valid.json (best component 0.3920, gamma=0.5 0.4902 -> G_V 0.0982);
+% negative results .claude/shared/status.md §35-§37, §48.
+
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{figures/f_teaser_valid.pdf}
-  \caption{\TODO{Teaser caption: one damaged query (half the rooms removed, valid split) and the top-5 results of vision, graph and fusion; the original plan is framed where it appears. State the conclusion. Source: f\_teaser\_valid.sources.txt.}}
+  \caption{\textbf{Retrieving a plan from an incomplete query.}
+  Top: a validation plan and the query obtained by removing half of its rooms together with their walls. Each row shows the top-5 results of one system, with the source plan framed where it appears.
+  The vision branch does not find the source in its top 100 and the graph branch ranks it third; yet the vision branch scores the source above the two plans the graph ranks first, and late fusion ranks it first.
+  The query is the first, in alphabetical order, of the 423 validation queries at this damage level in which fusion ranks the source first and neither branch does, so it illustrates the mechanism and not the average case (\cref{sec:results}).}
   \label{fig:teaser}
 \end{figure*}
 
-\TODO{Motivation: real design workflows start from partial layouts; retrieval must complete, not only resemble. Visual similarity differs from architectural relevance (function, topology). PAPER.md \S2.}
+A floor plan can be searched as an image or as a structure.
+Architects and designers often start from a layout that is only partially specified---a few rooms, an outline, a fragment of an existing plan---and look for complete plans that contain it.
+Retrieval in this setting must \emph{complete} the query, not merely find plans that look like it.
+Two plans may look alike in a rendering while serving different functions, and two plans with the same rooms and connections may look different once rotated or resized.
 
-\TODO{Why RPLAN: raster images and structural metadata for the same plans, so both an image branch and a graph branch are possible on the same gallery.}
+The two natural representations of a plan fail in different ways when the query is incomplete.
+An image encoder sees the shape of what remains, including the shape of the missing part, but reads the room categories only through the colours of the rendering.
+A graph of rooms and adjacencies encodes the functional structure explicitly, but a partial graph is often the plausible \emph{complete} graph of many other plans.
+Previous work on floor-plan similarity learns a similarity between complete plans, either from graphs~\cite{patil2021layoutgmn,vanengelenburg2025layoutgkn} or, in general image retrieval, from global image descriptors~\cite{radenovic2019gem}; how these representations behave when part of the plan is missing, and whether they can be combined, has not been measured.
 
-\TODO{Our approach in one paragraph: vision branch + graph branch + late fusion, judged on robustness to incomplete queries.}
+We study this question on RPLAN~\cite{wu2019rplan}, which provides both a rendered image and a structural record for the same plans.
+We build two retrieval branches on the same gallery of 67{,}405 plans: a vision branch with a frozen foundation encoder and whitening, chosen among 52 configurations over 8 encoders, and a graph branch whose GNN is trained to map a partial room graph onto its complete version.
+A late fusion concatenates the two descriptors with a single weight.
+We measure robustness as the ability to retrieve the source plan when rooms, a region or image patches are removed, at three levels of damage, and we make every choice on the validation split and read the test split once, with the expected outcomes written in advance.
 
-\noindent We make the following contributions:
+On the test split, with rooms removed, late fusion raises the self-recovery score from 0.470 for the best single branch, the graph, to 0.642 ($+0.172$, 95\% CI $[+0.162, +0.183]$), and the vision branch alone reaches 0.396.
+Two controls on the validation split show that the gain is not only an ensemble effect: fusing two trainings of the same graph encoder gains $+0.034$ over the better one, fusing two different vision encoders gains $+0.098$, and fusing image and graph gains $+0.174$.
+\Cref{fig:teaser} shows the mechanism on one query: usually one branch keeps the source near the top while the other demotes the plans that outrank it.
+
+The path to these numbers also produced negative results that we report as such.
+Our first room-removal damage left the internal walls of the removed rooms in the image, so that each removed room remained visible as an empty outlined cell; this artifact inflated the measured robustness of the vision branch by a large margin.
+A projection head trained on frozen features to recover damaged plans improves on the damage it was trained on but loses on the other two, even after the artifact was fixed.
+Finally, relevance measures computed from the metadata are circular for both branches, so we use them only to describe what each system retrieves, never to select.
+
+\noindent In summary, we make the following contributions:
 \begin{itemize}
-  \item \TODO{Contribution 1: two retrieval branches on the same gallery and queries, and their late fusion.}
-  \item \TODO{Contribution 2: a robustness criterion over three damages that really remove information, fixed before the grid.}
-  \item \TODO{Contribution 3: fusion beats the best branch under damage, with two controls that separate ensemble effect from complementary information.}
-  \item \TODO{Contribution 4: negative results reported as such (rendering artifact, head that does not transfer).}
+  \item A protocol for floor-plan retrieval from incomplete queries: three damages that remove information at controlled levels, a self-recovery robustness metric fixed before the experiments, paired statistics, and a test split read once.
+  \item An image branch and a graph branch evaluated on the same gallery and queries, and a late fusion that improves self-recovery under room removal by $+0.17$ over the best branch on the test split, with two controls that separate the ensemble effect from the complementary information.
+  \item Negative results with their mechanism: a rendering artifact that inflated the measured robustness, and a trained projection head that learns the damage it sees rather than a general robustness.
 \end{itemize}

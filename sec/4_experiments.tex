@@ -4,15 +4,56 @@
 \subsection{Metrics}
 \label{sec:metrics}
 
-\paragraph{Incomplete queries and robustness metric.}
-\TODO{Three damages at $f\in\{0.25,0.5,0.75\}$: rooms removed with their walls, crop, patch. Self-recovery reciprocal rank $\rightarrow$ AUC over levels $\rightarrow$ $R$ = mean of the three AUCs. Paired bootstrap 95\% CI. PAPER.md \S5.4; project status.md \S38.}
+% Sources (../CVCS-AI-Assisted-ID/): damages src/vision/data/vision_damage.py,
+% src/vision/data/vision_partial_query.py:49-64, src/graph/graph_partial_query.py;
+% self-recovery src/vision/evaluation/evaluate.py:586-594 (max_k = 100);
+% AUC and R src/evaluation/robustness_auc.py:73-77,190,216; bootstrap src/evaluation/significance.py:59;
+% removed area: mean area_removed of results/perquery/vision_damage_valid_B/
+%   vision_pespatial_gem_whiten-train_partial-*_valid.npz (computed 2026-09-30);
+% relevance src/evaluation/relevance.py:76-160, src/evaluation/metrics.py:36-63;
+% duplicates and colour compression: .claude/shared/dataset.md, status.md §21.2.
+
+\paragraph{Incomplete queries.}
+A query is a validation or test plan from which a fraction $f\in\{0.25, 0.5, 0.75\}$ of the content is removed with one of three damages, while the gallery keeps the complete plans.
+\emph{Room removal} deletes $\operatorname{round}(f\,n)$ of the $n$ rooms, drawn uniformly with a per-query seed so that both branches remove the same rooms.
+In the image, the removed rooms are filled with the background colour and their walls are erased, whatever their shade, so that the query loses the room type and its partitions and keeps only the shape of the hole; in the graph, only the subgraph induced by the remaining rooms is kept.
+Since rooms differ in size, the removed fraction of the plan area is on average 0.29, 0.52 and 0.71 at the three levels.
+\emph{Crop} blanks one axis-aligned rectangle of random sides and position, accepted when it covers a fraction $f\pm0.05$ of the plan pixels.
+\emph{Patch} blanks whole ViT patches of the resized input, in random order, until a fraction $f$ of the plan is covered, so that entire tokens are removed.
+Crop and patch act on pixels and are applied to the vision branch only.
+
+\paragraph{Robustness metric.}
+We measure \emph{self-recovery}: the gallery still contains the intact source plan, and a query scores the reciprocal rank $\mathrm{rr}(q,f)$ of its source among the top 100 results, and 0 beyond.
+For a damage $d$, the per-query robustness is the mean over the three levels, $\mathrm{AUC}_d(q)=\tfrac{1}{3}\sum_{f}\mathrm{rr}_d(q,f)$, and for the vision branch the overall score averages the three damages, $R(q)=\tfrac{1}{3}\sum_{d}\mathrm{AUC}_d(q)$, so that no configuration can win by exploiting a single damage.
+Branches and fusion are compared on room removal, the damage they share.
+We report means over queries; every comparison is paired over the same queries and removed rooms, with 95\% percentile bootstrap intervals over queries ($B=10{,}000$).
+The level $f=0$ is excluded: about 3\% of the RPLAN images have a pixel-identical twin, which caps the undamaged self-recovery at about 0.97 for every system, a ceiling of the data rather than of the models.
 
 \paragraph{Per-axis relevance (descriptive).}
-\TODO{Composition, topology, geometry; nDCG@10 on the full plan. Descriptive only: circular on every axis. PAPER.md \S5.2--\S5.3, \S5.5.}
+To describe what a system retrieves beyond the source plan, we score the ranking of the complete plan against three relevance axes computed from the metadata, each in $[0,1]$.
+\emph{Composition} is the weighted Jaccard similarity between the 13-bin room-type histograms; \emph{topology} is the weighted Jaccard similarity between the 91-bin histograms of adjacent room-type pairs, which is invariant to room order; \emph{geometry} averages the similarity of footprint area ($1-|a_q-a_p|$ on the normalised grid), of footprint aspect ratio (ratio of the smaller to the larger) and of the per-type area distribution (one minus half the $\ell_1$ distance).
+We report nDCG@10 with these similarities as graded gains, with the ideal ranking computed over the whole gallery and the query itself excluded.
+These scores are \emph{descriptive} and never used for selection, because they are circular for both branches: the graph encoder receives the room types and adjacencies that composition and topology measure, the footprint is recoverable from the room boxes, and the renderings encode the room types as colours, albeit with 13 types collapsed into 6 colours.
+We use them to state the cost of a choice on complete plans, not to rank systems.
 
 \subsection{Dataset and experimental details}
 \label{sec:setup}
-\TODO{Table T1: RPLAN, official splits, shared gallery, 2000 queries (seed 42), valid selects, test read once, exclusions, random floor. Project status.md \S20, \S29.}
+
+% Sources: results/shared_gallery.json (n_shared 67405, vision 67453, graph 67405);
+% .claude/shared/dataset.md (split counts, 13 types, 1167x875 renderings);
+% logs/gp_03_train_gnn_107119.log (train=47126 valid=10152);
+% results/fusion/select_valid.json and select_test.json (n_queries 2000).
+
+\paragraph{Dataset.}
+We use RPLAN~\cite{wu2019rplan}, a large collection of residential floor plans that provides, for each plan, a rendered colour image ($1167\times875$ pixels, rooms coloured by category) and a structural record with 13 room types, room boxes and typed room adjacencies.
+The gallery contains the 67{,}405 plans that have both an image and a record (48 of the 67{,}453 images have no record and are excluded), and it is shared by the two branches, which index exactly the same plans in the same order.
+We follow the official split, which assigns 47{,}126 gallery plans to training, 10{,}152 to validation and 10{,}127 to test.
+The graph encoder is trained and the whitening is estimated on training plans only, while the gallery always contains all plans, as in a search engine.
+
+\paragraph{Protocol.}
+Every choice (vision configuration, graph checkpoint, fusion weight) is made on 2{,}000 validation queries sampled with a fixed seed.
+The test split is used once, after all choices were frozen and the expected outcomes written down, with 2{,}000 test queries sampled in the same way; no number reported on the test split was used to select anything.
+Queries remain in the gallery, since retrieving them is the self-recovery task.
 
 \subsection{Results}
 \label{sec:results}
