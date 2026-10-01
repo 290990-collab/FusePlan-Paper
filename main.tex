@@ -29,19 +29,17 @@
 \title{\LaTeX\ Author Guidelines for \confName~Proceedings}
 
 %%%%%%%%% AUTHORS - PLEASE UPDATE
-\author{Angelillis Giuseppe\\
-{\tt\small 280284@studenti.unimore.it}
-% For a paper whose authors are all at the same institution,
-% omit the following lines up until the closing ``}''.
-% Additional authors and addresses can be added with ``\and'',
-% just like the second author.
-% To save space, use either the email address or home page, not both
-\and
-Di Maria Enrico\\
-{\tt\small 290990@studenti.unimore.it}
-\and
-Germini Gabriele\\
+% One 3-column tabular (instead of \and) keeps all authors on a single line
+% and lets the shared affiliation span the three columns.
+\author{%
+\begin{tabular}{ccc}
+Angelillis Giuseppe & Di Maria Enrico & Germini Gabriele\\
+{\tt\small 280284@studenti.unimore.it} &
+{\tt\small 290990@studenti.unimore.it} &
 {\tt\small 284597@studenti.unimore.it}
+\\[0.3cm]
+\multicolumn{3}{c}{University of Modena and Reggio Emilia, Italy}
+\end{tabular}
 }
 
 \begin{document}
