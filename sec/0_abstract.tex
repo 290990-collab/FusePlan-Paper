@@ -1,3 +1,11 @@
+% Numbers: same sources as sec/1_intro.tex (results/fusion/select_test.json,
+% complementarity_valid.json, complementarity_visionvision_valid.json).
 \begin{abstract}
-\TODO{Abstract (150--200 words). Problem: floor-plan retrieval from incomplete queries (RPLAN). Method: frozen vision encoder + GNN on the room graph, combined by late fusion. Main result: fusion over the best single branch on the test split, read once (project status.md \S53). Per-axis relevance only as descriptive analysis.}
+Searching floor plans often starts from an incomplete layout, yet retrieval methods are usually evaluated on complete plans.
+We study floor-plan retrieval from incomplete queries on RPLAN, where each plan is available both as a rendered image and as a graph of rooms.
+We compare a vision branch, a frozen foundation encoder with whitening selected among 52 configurations over 8 encoders, with a graph branch, a graph attention network trained to map a partial room graph onto its complete version, and combine them by late fusion with a single weight.
+Robustness is measured as the ability to retrieve the source plan when rooms, a region or image patches are removed at three levels, with every choice made on the validation split and the test split read once.
+On the test split, with rooms removed, late fusion raises the self-recovery score of the best single branch from 0.470 to 0.642.
+Two controls show that this gain is not only an ensemble effect: fusing image and graph gains more than fusing two vision encoders, and much more than fusing two trainings of the same graph encoder.
+We also report negative results: a rendering artifact that inflated the measured robustness of the vision branch, and a trained projection head that does not transfer across damages.
 \end{abstract}
