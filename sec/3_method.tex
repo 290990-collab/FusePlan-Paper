@@ -29,9 +29,11 @@ Both branches index the same gallery and receive the same damaged queries, so th
 The fused descriptor is the weighted concatenation of the two L2-normalised vectors,
 \begin{equation}
   z_p = \bigl[\sqrt{\alpha}\,v_p \,;\, \sqrt{1-\alpha}\,g_p\bigr],
-  \qquad
-  \langle z_q, z_p\rangle = \alpha\,\langle v_q, v_p\rangle + (1-\alpha)\,\langle g_q, g_p\rangle,
   \label{eq:fusion}
+\end{equation}
+\begin{equation}
+  \langle z_q, z_p\rangle = \alpha\,\langle v_q, v_p\rangle + (1-\alpha)\,\langle g_q, g_p\rangle,
+  \label{eq:fusion_inner}
 \end{equation}
 so that $\lVert z_p\rVert = 1$ and a single exact inner-product search over the $896$-d vectors ranks by a convex combination of the two cosine similarities.
 The endpoints recover the single branches exactly ($\alpha=1$ vision, $\alpha=0$ graph), which we use as a correctness check of the fused pipeline.
