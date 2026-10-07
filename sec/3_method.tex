@@ -3,77 +3,107 @@
 
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=\textwidth]{figures/english/f_pipeline.pdf}
-  \caption{\textbf{Pipeline overview.}
-  Every floor plan is available both as a rendered image and as a structural record.
-  The vision branch embeds the image with a frozen encoder followed by whitening; the graph branch embeds the room graph with a GNN trained for incompleteness.
-  Late fusion concatenates the two unit vectors with weights $\sqrt{\alpha}$ and $\sqrt{1-\alpha}$ ($\alpha=0.6$), so that one inner product retrieves with both.
-  All three systems search the same gallery with the same queries and are scored with the same measure.}
+  \includegraphics[width=\textwidth]{figures/english/f_final_pipeline.pdf}
+  \caption{\textbf{FusePlan pipeline.}
+  The vision branch embeds the rendered plan with a frozen encoder and whitening; the graph branch embeds the room graph with a GNN trained to map partial plans onto complete ones.
+  Late fusion concatenates the two unit vectors with weights $\sqrt{\alpha}$ and $\sqrt{1-\alpha}$ ($\alpha=0.4$, chosen on validation), so one inner product scores both.
+  The damage-trained vision variants (\cref{sec:method_vision}) add a trained head to the vision branch and leave the rest unchanged.
+  All systems search the same gallery of 67{,}405 plans with the same queries.}
   \label{fig:pipeline}
 \end{figure*}
 
-% Sources (paper-comp/CVCS-AI-Assisted-ID/): gallery results/shared_gallery.json (n_shared 67405);
-% fusion src/evaluation/late_fusion.py:389-397, alpha results/fusion/select_{valid,test}.json;
-% graph configs/graph_models/gat.yaml + logs/gp_03_train_gnn_107119.log (flags, epoch 294);
-% vision configs/vision_models/pespatial.yaml, src/vision/models/vision_encoders/pe_spatial.py,
-% src/vision/models/retrieval_model.py:176-230, src/vision/data/preprocess.py.
+% Sources (paper-comp/CVCS-AI-Assisted-ID/): PAPER.md §5.1, §5.5-§5.8;
+% fusion src/evaluation/{query_vectors,late_fusion,fusion_select}.py;
+% weights results/csv_final/{valid,test}_seeds.csv (alpha_main 0.4 in 4/4, alpha_head 0.3/0.4),
+% results/csv_multiseed/head_v2_fusion.csv (0.6/0.6/0.5/0.5);
+% graph configs/graph_models/gat.yaml, results/csv_final/valid_graph_selection.csv (gat/comb, 317952 params);
+% vision configs/vision_models/pespatial.yaml, src/vision/models/vision_encoders/base.py:24 (clamped GeM).
 
-Let $\mathcal{G}$ be a gallery of floor plans, each available both as a rendered image $I_p$ and as a structural record $S_p$ (room types, room boxes, typed adjacencies).
-A query is an \emph{incomplete} version $\tilde{q}$ of a plan $q\in\mathcal{G}$, from which part of the content has been removed (\cref{sec:metrics}); the task is to rank the gallery so that the source plan $q$ appears as high as possible.
-Two encoders map a plan to a unit vector: a vision encoder $v(\cdot)\in\mathbb{R}^{768}$ that reads the image and a graph encoder $g(\cdot)\in\mathbb{R}^{128}$ that reads the room graph.
-Both branches index the same gallery and receive the same damaged queries, so the two branches and their fusion are compared query by query (\cref{fig:pipeline}).
+Let $\mathcal{G}$ be a gallery of floor plans, each available as a rendered image and as a structural record (room types, room boxes, typed adjacencies).
+A query $\tilde{q}$ is a plan $q\in\mathcal{G}$ with part of its content removed (\cref{sec:metrics}).
+The task asks for a ranking of the whole gallery that places the source plan $q$ as high as possible.
+A vision encoder maps a plan to a unit vector $v\in\mathbb{R}^{768}$ and a graph encoder maps it to a unit vector $g\in\mathbb{R}^{128}$.
+Both branches index the same gallery and receive the same damaged queries, so we compare branches and fusions query by query (\cref{fig:pipeline}).
 
-\subsection{Late fusion}
+\subsection{Late fusion and ensemble controls}
 \label{sec:method_fusion}
 
-The fused descriptor is the weighted concatenation of the two L2-normalised vectors,
+\paragraph{Fusion.}
+The fused descriptor concatenates the two L2-normalised vectors with a single weight $\alpha$,
 \begin{equation}
-  z_p = \bigl[\sqrt{\alpha}\,v_p \,;\, \sqrt{1-\alpha}\,g_p\bigr],
+  z = \bigl[\sqrt{\alpha}\,v \,;\, \sqrt{1-\alpha}\,g\bigr],\qquad
+  \langle z_q, z_p\rangle = \alpha\,\langle v_q, v_p\rangle + (1-\alpha)\,\langle g_q, g_p\rangle,
   \label{eq:fusion}
 \end{equation}
-\begin{equation}
-  \langle z_q, z_p\rangle = \alpha\,\langle v_q, v_p\rangle + (1-\alpha)\,\langle g_q, g_p\rangle,
-  \label{eq:fusion_inner}
-\end{equation}
-so that $\lVert z_p\rVert = 1$ and a single exact inner-product search over the $896$-d vectors ranks by a convex combination of the two cosine similarities.
-The endpoints recover the single branches exactly ($\alpha=1$ vision, $\alpha=0$ graph), which we use as a correctness check of the fused pipeline.
-For a damaged query, both query vectors are recomputed from the \emph{same} removed rooms, while gallery vectors are those of the complete plans.
+so $\lVert z\rVert=1$ and one exact inner-product search over 896-d vectors ranks the gallery by a convex combination of the two cosine similarities.
+At $\alpha=1$ and $\alpha=0$ the fusion reproduces the two branches, which we use as a correctness check.
+For a damaged query, both branches recompute the query vector from the \emph{same} removed rooms; gallery vectors always describe complete plans.
+We choose $\alpha$ on the validation split over $\{0, 0.1, \dots, 1\}$ with a rule fixed before the runs.
+The criterion is the robustness to room removal (\cref{sec:metrics}), the only damage both branches can receive.
+Values whose paired difference from the best has a 95\% bootstrap interval containing zero count as tied, and we take the central tied value.
+The rule gives $\alpha^*=0.4$ in all four replicas, and the test split uses the weight fixed on validation.
+The fusion is static: one global weight, no per-query gate.
 
-The weight is chosen on the validation split over $\alpha\in\{0, 0.1, \dots, 1\}$ with a rule fixed before the runs: the criterion is the robustness to room removal (\cref{sec:metrics}), the only damage both branches can receive; the candidates whose paired difference from the best has a 95\% bootstrap interval containing zero are considered tied, and the central one of the tied set is selected.
-This gives $\alpha^*=0.6$, which is then kept fixed on the test split.
+\paragraph{Ensemble controls.}
+Fusing any two models with partly independent errors raises retrieval accuracy, so a fusion gain alone does not show that the image carries information the graph lacks.
+We therefore compare every vision--graph fusion with two \emph{ensemble controls} that fuse the graph with a second model holding the \emph{same} information: a second training of the same graph configuration (different initialisation and batches), and a graph encoder of another family trained with the same recipe.
+Each control selects its own weight on validation with the rule above.
+For a fusion $F$ of branches $A$ and $B$, the per-query gain is $\mathrm{gain}_F(q)=\mathrm{AUC}_F(q)-\mathrm{AUC}_{b}(q)$, where $b$ is the branch with the higher mean AUC.
+
+\paragraph{Complementarity gain.}
+We call \emph{complementarity gain} the part of a vision--graph gain that no second graph model provides,
+\begin{equation}
+  \mathrm{CG} = \overline{\mathrm{gain}}_{V+G} - \overline{\mathrm{gain}}_{C^\star},
+  \label{eq:cg}
+\end{equation}
+where $C^\star$ is the ensemble control with the larger mean gain, a conservative choice.
+We compute CG on paired queries with bootstrap intervals.
+$\mathrm{CG}>0$ means the vision branch contributes information beyond an ensemble effect; the remaining part $\overline{\mathrm{gain}}_{C^\star}$ is what a second graph model would already deliver.
+The two parts come from different fusions, so they summarise the gain and do not split one fusion additively.
 
 \subsection{Graph branch}
 \label{sec:method_graph}
 
 \paragraph{Room graph.}
-Each room of the record becomes a node, built directly from the RPLAN metadata~\cite{wu2019rplan} rather than by parsing the image.
-Node features concatenate a one-hot encoding of the 13 room types with six geometric features of the room box on the $256\times256$ RPLAN grid: centre $(c_x, c_y)$, width, height, area and aspect ratio.
-The aspect ratio is clipped at its 99th percentile and the geometric features are standardised with training-split statistics.
-Adjacencies become undirected edges whose features are a one-hot encoding of the 10 RPLAN relation types.
+We build each graph from the RPLAN record~\cite{wu2019rplan}, not from the image.
+Each room becomes a node whose 19 features concatenate a one-hot encoding of the 13 room types with the centre, width, height, area and aspect ratio of the room box on the $256\times256$ RPLAN grid; we clip the aspect ratio at its 99th percentile and standardise the geometric features.
+Each adjacency becomes an undirected edge with a one-hot encoding of the 10 RPLAN relation types.
 
 \paragraph{Encoder.}
-The graph encoder stacks two GATv2 layers~\cite{brody2022gatv2} with 4 attention heads (averaged), hidden size 128 and edge features in the attention, with a ReLU between layers.
-Node states are sum-pooled and concatenated with the sum-pooled input features; on the one-hot part the latter is exactly the room-type histogram, which therefore reaches the output without depending on the learned weights.
-A linear layer projects the result to 128 dimensions, followed by L2 normalisation.
+The encoder $W$ stacks three GATv2 layers~\cite{brody2022gatv2} with hidden size 256, one attention head and edge features in the attention.
+We sum-pool the node states and concatenate the sum-pooled input features; on the one-hot part this skip connection equals the room-type histogram.
+A linear layer projects the result to 128 dimensions, followed by L2 normalisation (317{,}952 parameters).
 
 \paragraph{Training for incompleteness.}
-The encoder is trained with the symmetric InfoNCE loss~\cite{oord2019cpc} with in-batch negatives, temperature $\tau=0.3$, batch size 256 and AdamW (learning rate $10^{-3}$, weight decay $10^{-5}$), on the training split only.
-Positive pairs are \emph{asymmetric}: one view is the complete plan, randomly reflected ($p=0.5$) or rotated by a multiple of $90^\circ$ ($p=0.5$); the other view is the same plan with $\operatorname{round}(f\,n)$ of its $n$ rooms removed, $f\sim\mathcal{U}[0.25, 0.75]$, keeping the subgraph induced by the remaining rooms and at least one room.
-The pair thus asks the encoder to map a partial plan onto its complete version, which is the retrieval task of \cref{sec:metrics}.
-The checkpoint is not selected on the training loss: after each epoch we measure the robustness to room removal on 2{,}000 validation queries disjoint from the evaluation queries, and keep the best epoch within a budget of 300.
+We train with the symmetric InfoNCE loss~\cite{oord2019cpc}, in-batch negatives, temperature $\tau=0.1$, batch size 256, learning rate $10^{-3}$, weight decay $10^{-5}$ and no dropout, on the training split only.
+Positive pairs are \emph{asymmetric}: one view is the complete plan, the other removes a fraction $f\sim\mathcal{U}[0.25,0.75]$ of its rooms together with their edges.
+The pair thus asks the encoder to map a partial plan onto its complete version, the retrieval task itself.
+We select the checkpoint on retrieval, not on the loss: after each epoch we measure the robustness to room removal on 2{,}000 validation queries disjoint from the evaluation queries, with the whole gallery, over 600 epochs.
+The selected epoch falls between 550 and 592 in all four replicas, so the reported robustness of the graph is a lower bound.
+
+\paragraph{Configuration search.}
+We chose $W$ with the same recipe for GCN~\cite{kipf2017gcn}, GraphSAGE~\cite{hamilton2017graphsage} and GATv2.
+Starting from a reference configuration per encoder, we changed one factor at a time: temperature, skip connection, rotation and reflection augmentation, a lost-neighbour marker, depth, width, pooling, aggregator and attention heads.
+We then combined the changes that improved robustness in all four seeds.
+We train each of the 37 candidates with 4 seeds and score it on validation only (\cref{tab:ablation_graph}).
+$W$ is the combination for GATv2: $\tau=0.1$, no rotations or reflections, three layers, width 256 and one head.
 
 \subsection{Vision branch}
 \label{sec:method_vision}
 
-\paragraph{Encoder.}
-The vision branch uses a frozen Perception Encoder~\cite{bolya2025perception}, in its spatially aligned ViT-B/16 variant (PE-spatial), without any training.
-The rendered plan is resized so that its longer side is 224 pixels, keeping the aspect ratio, and padded to a square with the white background of the renderings.
-The global descriptor is the generalised-mean (GeM) pooling~\cite{radenovic2019gem} of the last-layer patch tokens with exponent $p=3$, followed by L2 normalisation.
+\paragraph{Frozen encoder.}
+The vision branch uses the spatially aligned Perception Encoder~\cite{bolya2025perception} (PE-Spatial, ViT-B/16) without training.
+We resize the rendered plan so that its longer side has 224 pixels, keeping the aspect ratio, and pad it to a square with the white background.
+The descriptor is a generalised mean with $p=3$ over the last-layer patch tokens, computed on their positive part: the implementation clamps the post-LayerNorm tokens at $10^{-6}$ before pooling, which differs from standard GeM~\cite{radenovic2019gem}.
 
 \paragraph{Whitening and indexing.}
-We apply PCA whitening~\cite{jegou2012whitening}, whose effect is measured in \cref{sec:ablation}: the mean $\mu$ and the covariance of the descriptors are estimated on the training-split plans only, and every descriptor $x$ is mapped to $W^\top(x-\mu)$ with $W=U\Lambda^{-1/2}$, keeping all 768 components, and re-normalised.
-Queries undergo the same transformation.
-Gallery vectors are stored in an exact inner-product FAISS index~\cite{douze2025faiss}, so that the score is the cosine similarity.
+We apply PCA whitening~\cite{jegou2012whitening}: mean and covariance come from training-split plans only, and every descriptor $x$ maps to $\Lambda^{-1/2}U^\top(x-\mu)$, keeping all 768 components, followed by L2 normalisation.
+An exact inner-product FAISS index~\cite{douze2025faiss} stores the gallery.
+Whitening matters because the frozen descriptors of the synthetic renderings collapse into a narrow cone; it improves robustness in all 26 encoder--pooling pairs we tested (\cref{tab:ablation_vision}).
+PE-Spatial with this pooling and whitening is the most robust of 52 frozen configurations over 8 encoders~\cite{oquab2024dinov2,simeoni2025dinov3,tschannen2025siglip2,ranzinger2024amradio,assran2023ijepa,cao2026tipsv2,bolya2025perception}, selected on validation.
 
-\paragraph{Choice of the configuration.}
-Encoder, pooling, input resolution and whitening are not fixed a priori: PE-spatial with GeM pooling and whitening is the most robust of 52 frozen configurations over 8 encoders~\cite{oquab2024dinov2,simeoni2025dinov3,tschannen2025siglip2,ranzinger2024amradio,assran2023ijepa,cao2026tipsv2,bolya2025perception} on the validation split (\cref{sec:ablation}).
+\paragraph{Damage-trained heads.}
+To test whether a vision branch trained on the damage carries more information, we add two heads on top of the frozen encoder, trained with InfoNCE ($\tau=0.07$, batch 4{,}096) on training plans, with self-supervised positives and no relevance labels.
+The \emph{single-damage head} is an MLP ($1024\to256$, GELU) applied to gallery and queries; it learns to match a plan with rooms removed to the complete plan, and we re-estimate the whitening on its outputs.
+The \emph{multi-damage head} acts on queries only: it adds a residual MLP ($768\to1024\to768$, last layer initialised at zero) to the whitened frozen vector, so the gallery stays frozen; it trains on room removal, crop and patch in turn.
+Both heads select their epoch on 1{,}000 validation queries disjoint from the evaluation queries.

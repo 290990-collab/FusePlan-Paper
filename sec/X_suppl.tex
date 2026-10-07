@@ -2,19 +2,50 @@
 \setcounter{page}{1}
 \maketitlesupplementary
 
+% Figures copied from paper-comp/CVCS-AI-Assisted-ID/figures/{final,multiseed,historical}/english/,
+% each with its *.sources.txt there.
+
 \section{Additional figures}
 \label{sec:suppl_figures}
 
 \begin{figure}[h]
   \centering
+  \includegraphics[width=\linewidth]{figures/english/f_final_controls.pdf}
+  \caption{\textbf{Fusion gain of $W$ with the vision branches and with the two ensemble controls} (seed 42; validation dashed, test solid; 95\% intervals).}
+  \label{fig:suppl_controls}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{figures/english/f_final_alpha_valid.pdf}
+  \caption{\textbf{Room-removal AUC against the fusion weight $\alpha$} on validation, four replicas, with the selected weight marked.}
+  \label{fig:suppl_alpha}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{figures/english/f_multiseed_damage.pdf}
+  \caption{\textbf{Robustness of the three vision branches per damage} (bars: test; diamonds: validation).}
+  \label{fig:suppl_vision_damage}
+\end{figure}
+
+\begin{figure*}[h]
+  \centering
+  \includegraphics[width=\textwidth]{figures/english/f_damage_kinds_valid.pdf}
+  \caption{\textbf{Left: the frozen PE-Spatial branch under the three damages (validation). Right: the rendering artifact}, with the same removed rooms rendered with the interior walls kept or erased.}
+  \label{fig:suppl_damage_kinds}
+\end{figure*}
+
+\begin{figure}[h]
+  \centering
   \includegraphics[width=\linewidth]{figures/english/f_classes_valid.pdf}
-  \caption{\TODO{Size of the equivalence classes, composition vs.\ topology. Source: f\_classes\_valid.sources.txt.}}
-  \label{fig:classes}
+  \caption{\textbf{Size of the exact-relevance classes on validation:} composition classes are large (median 5{,}007 plans), topology classes small (median 19).}
+  \label{fig:suppl_classes}
 \end{figure}
 
 \begin{figure*}[h]
   \centering
   \includegraphics[width=\textwidth]{figures/english/f_ablation_valid.pdf}
-  \caption{\TODO{Robustness $R$ of every configuration, grouped by encoder. Source: f\_ablation\_valid.sources.txt.}}
-  \label{fig:ablation_box}
+  \caption{\textbf{Mean AUC of three damages for every frozen configuration and head, grouped by encoder} (validation).}
+  \label{fig:suppl_ablation_box}
 \end{figure*}

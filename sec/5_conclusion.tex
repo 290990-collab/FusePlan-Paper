@@ -1,3 +1,23 @@
 \section{Conclusions}
 \label{sec:conclusion}
-\TODO{Summary; limitations (PAPER.md \S8: RPLAN only, synthetic damages, proxy relevance, fusion tied to this graph checkpoint); future work (PAPER.md \S9).}
+
+% Sources: PAPER.md §7.5-§7.7, §8, §9.
+
+A graph encoder trained on damaged--complete pairs and selected on robustness retrieves a plan from half of its rooms almost as well as from the complete plan.
+Fusing it with an image encoder adds information of its own under two conditions: the image branch trains on the damage, or the graph is no stronger than the image.
+Ensemble controls make this visible, and the complementarity gain gives it a number: even when positive, it is about half of the fusion gain.
+We recommend reporting fusion gains next to ensemble controls whenever two branches see related information.
+
+\paragraph{Limitations.}
+We use RPLAN only, with synthetic damages: a removed room leaves the outline of its hole in the image, and crop and patch reach only the vision branch, so we compare branches and fusions on room removal alone.
+The graph comes from exact records, not from parsed images, and the renderings encode room types as colours, so both branches read the same information at different granularity and every per-axis relevance score is circular.
+Training budgets bind: $W$ selects epochs 550--592 of 600 and LayoutGKN, trained once with upstream hyperparameters, stops at 300, so both robustness values are lower bounds.
+The fusion uses one global weight; a per-query gate remains untested, although a hard gate cannot exceed the per-query oracle, which the static fusion already exceeds.
+We trained the multi-damage head once and judged it only on the damages it trained on.
+Fusion gains with $W$ are small in absolute terms, although paired and stable across replicas.
+The analysis of where the complementarity gain appears is post hoc and uses one seed.
+Finally, earlier stages of this project read the test split: an exploratory benchmark of vision and graph configurations, three vision variants on complete plans, and two pre-registered readings of a pipeline with a weaker graph.
+All numbers in this paper come from two later pre-registered readings, with every weight fixed on validation.
+
+\paragraph{Future work.}
+Graphs parsed from images would remove the circularity; external datasets would test generality without retraining; a learned or per-query fusion, a fourth damage outside the training set of the heads, and human relevance judgements are the next steps.

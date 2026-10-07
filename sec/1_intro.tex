@@ -1,51 +1,54 @@
 \section{Introduction}
 \label{sec:intro}
 
-% Sources (paper-comp/CVCS-AI-Assisted-ID/): teaser figures/f_teaser_valid.sources.txt (query 10340,
-% valid, f=0.5, vision >100, graph 3rd, fusion 1st; selection rule over 423 queries);
-% test results/fusion/select_test.json (auc_means 0: 0.4700, 0.6: 0.6424, 1: 0.3965;
-% star_vs_reference delta 0.1725 [0.1625, 0.1826]);
-% controls results/fusion/complementarity_valid.json (G_F 0.1740, G_C 0.0336),
-% complementarity_visionvision_valid.json (best component 0.3920, gamma=0.5 0.4902 -> G_V 0.0982);
-% negative results .claude/shared/status.md §35-§37, §48.
+% Sources (paper-comp/CVCS-AI-Assisted-ID/): PAPER.md §1-§2; teaser
+% figures/final/english/f_final_teaser_valid.sources.txt; test numbers results/csv_final/
+% test_summary.csv, test_paired_deltas.csv; replicas results/csv_multiseed/ensemble_D.csv;
+% curve results/csv_final/test_curve.csv and figures/final/english/f_final_curve.sources.txt.
 
-\begin{figure*}[t]
+\begin{figure}[t]
   \centering
-  \includegraphics[width=\textwidth]{figures/english/f_teaser_valid.pdf}
-  \caption{\textbf{Retrieving a plan from an incomplete query.}
-  Top: a validation plan and the query obtained by removing half of its rooms together with their walls. Each row shows the top-5 results of one system, with the source plan framed where it appears.
-  The vision branch does not find the source in its top 100 and the graph branch ranks it third; yet the vision branch scores the source above the two plans the graph ranks first, and late fusion ranks it first.
-  The query is the first, in alphabetical order, of the 423 validation queries at this damage level in which fusion ranks the source first and neither branch does, so it illustrates the mechanism and not the average case (\cref{sec:results}).}
+  \includegraphics[width=\linewidth]{figures/english/f_final_teaser_valid.pdf}
+  \caption{\textbf{Retrieving a plan from half of its rooms.}
+  Top 5 of each system for one validation query; a frame marks the source.
+  The single-damage vision head misses it, the graph ranks it second behind a near-identical plan, and the fusion ranks it first.
+  The query is the first, alphabetically, of the 34 validation queries at this level where only the fusion ranks the source first.}
   \label{fig:teaser}
-\end{figure*}
+\end{figure}
 
-A floor plan can be searched as an image or as a structure.
-Architects and designers often start from a layout that is only partially specified---a few rooms, an outline, a fragment of an existing plan---and look for complete plans that contain it.
-Retrieval in this setting must \emph{complete} the query, not merely find plans that look like it.
-Two plans may look alike in a rendering while serving different functions, and two plans with the same rooms and connections may look different once rotated or resized.
+% Stakes: architects search precedents from partial layouts.
+Architects rarely start from a complete floor plan.
+They sketch a few rooms, fix an outline or reuse a fragment of an existing plan, and then look for complete plans that contain it.
+A retrieval system for this workflow must rank a large collection of plans from an \emph{incomplete} query and still find the plan the fragment came from.
 
-The two natural representations of a plan fail in different ways when the query is incomplete.
-An image encoder sees the shape of what remains, including the shape of the missing part, but reads the room categories only through the colours of the rendering.
-A graph of rooms and adjacencies encodes the functional structure explicitly, but a partial graph is often the plausible \emph{complete} graph of many other plans.
-Previous work on floor-plan similarity learns a similarity between complete plans, either from graphs~\cite{patil2021layoutgmn,vanengelenburg2025layoutgkn} or, in general image retrieval, from global image descriptors~\cite{radenovic2019gem}; how these representations behave when part of the plan is missing, and whether they can be combined, has not been measured.
+% Problem gap: two structural limitations of current practice.
+Two gaps separate current methods from this workflow.
+First, floor-plan similarity methods learn and evaluate on complete plans: LayoutGMN~\cite{patil2021layoutgmn} and LayoutGKN~\cite{vanengelenburg2025layoutgkn} learn a structural similarity between complete RPLAN plans and score it with triplet accuracy or precision among their own top results.
+Partial plans appear in floor-plan generation~\cite{hu2020graph2plan,zeng2026plancraft}, and we found no retrieval method that takes them as queries.
+Second, a plan exists both as an image and as a graph of rooms, and fusing the two looks attractive because they fail in different ways: the image keeps the outline of a missing room, while a partial graph is the plausible complete graph of many smaller plans.
+Yet any fusion of two models with partly independent errors gains accuracy; a fusion gain alone cannot tell whether the image adds information the graph lacks or merely acts as a second model.
 
-We study this question on RPLAN~\cite{wu2019rplan}, which provides both a rendered image and a structural record for the same plans.
-We build two retrieval branches on the same gallery of 67{,}405 plans: a vision branch with a frozen foundation encoder and whitening, chosen among 52 configurations over 8 encoders, and a graph branch whose GNN is trained to map a partial room graph onto its complete version.
-A late fusion concatenates the two descriptors with a single weight.
-We measure robustness as the ability to retrieve the source plan when rooms, a region or image patches are removed, at three levels of damage, and we make every choice on the validation split and read the test split once, with the expected outcomes written in advance.
+% Key abstraction: ensemble controls and the complementarity gain.
+We separate the two with \emph{ensemble controls}: we fuse the graph with a second model that holds the same information, either a second training of the same graph encoder or another graph encoder.
+We call \emph{complementarity gain} (CG) the part of the vision--graph gain that the stronger control does not reach.
+A positive CG means the image contributes information of its own.
 
-On the test split, with rooms removed, late fusion raises the self-recovery score from 0.470 for the best single branch, the graph, to 0.642 ($+0.172$, 95\% CI $[+0.162, +0.183]$), and the vision branch alone reaches 0.396.
-Two controls on the validation split show that the gain is not only an ensemble effect: fusing two trainings of the same graph encoder gains $+0.034$ over the better one, fusing two different vision encoders gains $+0.098$, and fusing image and graph gains $+0.174$.
-\Cref{fig:teaser} shows the mechanism on one query: usually one branch keeps the source near the top while the other demotes the plans that outrank it.
+% Design intuition.
+FusePlan has two retrieval branches over the same gallery of 67{,}405 RPLAN plans~\cite{wu2019rplan} (\cref{fig:pipeline}).
+The graph branch is a GATv2 encoder~\cite{brody2022gatv2} trained to map a plan with rooms removed onto the complete plan, with the checkpoint chosen on retrieval robustness.
+The vision branch is a frozen PE-Spatial encoder~\cite{bolya2025perception} with whitening, optionally followed by a head trained on the same damages.
+A late fusion with a single weight combines their cosine similarities.
+We measure robustness as the self-recovery of the source plan when we remove rooms, a region or image patches, choose everything on validation and read the test split with the predictions written in advance.
 
-The path to these numbers also produced negative results that we report as such.
-Our first room-removal damage left the internal walls of the removed rooms in the image, so that each removed room remained visible as an empty outlined cell; this artifact inflated the measured robustness of the vision branch by a large margin.
-A projection head trained on frozen features to recover damaged plans improves on the damage it was trained on but loses on the other two, even after the artifact was fixed.
-Finally, relevance measures computed from the metadata are circular for both branches, so we use them only to describe what each system retrieves, never to select.
+% Results preview.
+On the test split, the graph branch recovers the source with an AUC of 0.903, against 0.611 for LayoutGKN retrained on the same task.
+Fusing it with the frozen image encoder adds $+0.013$, a gain that a second graph model matches; fusing it with a damage-trained vision head adds $+0.031$ (\cref{fig:teaser}), and over four replicas the damage-trained heads exceed both controls by $+0.012$ to $+0.022$.
+The fusion gain follows an inverted U in the strength of the graph: it peaks at $+0.198$ when the two branches are equally strong, where even the frozen encoder passes both controls.
 
-\noindent In summary, we make the following contributions:
+\noindent We make the following contributions:
 \begin{itemize}
-  \item A protocol for floor-plan retrieval from incomplete queries: three damages that remove information at controlled levels, a self-recovery robustness metric fixed before the experiments, paired statistics, and a test split read once.
-  \item An image branch and a graph branch evaluated on the same gallery and queries, and a late fusion that improves self-recovery under room removal by $+0.17$ over the best branch on the test split, with two controls that separate the ensemble effect from the complementary information.
-  \item Negative results with their mechanism: a rendering artifact that inflated the measured robustness, and a trained projection head that learns the damage it sees rather than a general robustness.
+  \item \textbf{Graph branch for incomplete plans.} Training on damaged--complete pairs and selecting on robustness, after the same search over GCN, GraphSAGE and GATv2, brings self-recovery under room removal to $0.904\pm0.001$ on test, $0.29$ above a retrained LayoutGKN.
+  \item \textbf{Ensemble controls and complementarity gain.} With a strong graph, a frozen image encoder adds no information beyond an ensemble effect, while damage-trained vision heads do; even then the control accounts for about half of the fusion gain, and the CG appears only where the graph has little left.
+  \item \textbf{Relative strength.} Across 37 graphs, the fusion gain peaks when the branches are equally strong and shrinks near the ceiling, which reconciles a $+0.17$ gain in an earlier version of our pipeline with $+0.013$ here.
+  \item \textbf{Protocol and negative results.} A self-recovery protocol with three damages, paired intervals, replicas and pre-registered test readings, and the failures that shaped it: a rendering artifact, a head that learns only the damage it sees, and a graph that collapses with symmetric pairs.
 \end{itemize}

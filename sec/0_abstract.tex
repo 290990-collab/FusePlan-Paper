@@ -1,11 +1,12 @@
-% Numbers: same sources as sec/1_intro.tex (results/fusion/select_test.json,
-% complementarity_valid.json, complementarity_visionvision_valid.json).
+% Numbers: results/csv_final/test_summary.csv, test_paired_deltas.csv;
+% results/csv_multiseed/ensemble_D.csv (test, 4 replicas); results/csv_final/test_curve.csv.
 \begin{abstract}
-Searching floor plans often starts from an incomplete layout, yet retrieval methods are usually evaluated on complete plans.
-We study floor-plan retrieval from incomplete queries on RPLAN, where each plan is available both as a rendered image and as a graph of rooms.
-We compare a vision branch, a frozen foundation encoder with whitening selected among 52 configurations over 8 encoders, with a graph branch, a graph attention network trained to map a partial room graph onto its complete version, and combine them by late fusion with a single weight.
-Robustness is measured as the ability to retrieve the source plan when rooms, a region or image patches are removed at three levels, with every choice made on the validation split and the test split read once.
-On the test split, with rooms removed, late fusion raises the self-recovery score of the best single branch from 0.470 to 0.642.
-Two controls show that this gain is not only an ensemble effect: fusing image and graph gains more than fusing two vision encoders, and much more than fusing two trainings of the same graph encoder.
-We also report negative results: a rendering artifact that inflated the measured robustness of the vision branch, and a trained projection head that does not transfer across damages.
+Architects often search for floor plans starting from an incomplete layout, yet floor-plan retrieval methods train and evaluate on complete plans.
+We study retrieval from incomplete queries on RPLAN with FusePlan, which fuses a graph branch and a vision branch over the same gallery of 67{,}405 plans.
+The graph branch, a GATv2 encoder trained to map plans with rooms removed onto complete plans, recovers the source plan with an AUC of 0.903 on the test split, against 0.611 for LayoutGKN retrained on the same task.
+A fusion gain alone does not show that the image adds information, because fusing any two models helps.
+We therefore compare each fusion with ensemble controls that fuse the graph with a second graph model, and define the complementarity gain as the part of the gain the controls do not reach.
+With this strong graph, a frozen image encoder adds $+0.013$ and no complementarity gain, while vision heads trained on the damage pass both controls by $+0.012$ to $+0.022$ over four replicas.
+The fusion gain peaks when the two branches are equally strong, and the image helps most where the graph keeps few rooms.
+We make every choice on the validation split and read the test split with pre-registered predictions.
 \end{abstract}
