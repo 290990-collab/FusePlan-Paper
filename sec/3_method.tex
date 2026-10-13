@@ -3,12 +3,12 @@
 
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=\textwidth]{figures/english/f_final_pipeline.pdf}
+  \includegraphics[width=\textwidth]{figures/english/f_final_pipeline_readme.pdf}
   \caption{\textbf{FusePlan pipeline.}
   The vision branch embeds the rendered plan with a frozen encoder and whitening; the graph branch embeds the room graph with a GNN trained to map partial plans onto complete ones.
   Late fusion concatenates the two unit vectors with weights $\sqrt{\alpha}$ and $\sqrt{1-\alpha}$ ($\alpha=0.4$, chosen on validation), so one inner product scores both.
   The damage-trained vision variants (\cref{sec:method_vision}) add a trained head to the vision branch and leave the rest unchanged.
-  All systems search the same gallery of 67{,}405 plans with the same queries.}
+  An exact inner-product FAISS search ranks the gallery of 67{,}405 plans with the fused vector; each branch alone is searched the same way, with the same queries and removed rooms.}
   \label{fig:pipeline}
 \end{figure*}
 
@@ -31,8 +31,10 @@ Both branches index the same gallery and receive the same damaged queries, so we
 \paragraph{Fusion.}
 The fused descriptor concatenates the two L2-normalised vectors with a single weight $\alpha$,
 \begin{equation}
-  z = \bigl[\sqrt{\alpha}\,v \,;\, \sqrt{1-\alpha}\,g\bigr],\qquad
+  \begin{gathered}
+  z = \bigl[\sqrt{\alpha}\,v \,;\, \sqrt{1-\alpha}\,g\bigr],\\
   \langle z_q, z_p\rangle = \alpha\,\langle v_q, v_p\rangle + (1-\alpha)\,\langle g_q, g_p\rangle,
+  \end{gathered}
   \label{eq:fusion}
 \end{equation}
 so $\lVert z\rVert=1$ and one exact inner-product search over 896-d vectors ranks the gallery by a convex combination of the two cosine similarities.
