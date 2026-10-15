@@ -13,15 +13,15 @@
 \paragraph{Incomplete queries.}
 A query is a validation or test plan from which we remove a fraction $f\in\{0.25, 0.5, 0.75\}$ of the content with one of three damages, while the gallery keeps the complete plans.
 \emph{Room removal} deletes $\operatorname{round}(f\,n)$ of the $n$ rooms of the plan, rounded to the nearest integer (ties to even): a plan with seven rooms loses 2, 4 and 5 rooms at the three levels.
-The removed rooms are drawn at random with a seed fixed per query and shared by the two branches, so both branches lose exactly the same rooms.
+The removed rooms are drawn at random with a seed fixed per query and shared by the two branches.
 In the image we fill the removed rooms with the background colour and erase their walls, so the query keeps only the outline of the hole; in the graph we keep the subgraph induced by the remaining rooms.
 Rooms differ in size, so the removed area is on average 0.29, 0.52 and 0.71 of the plan at the three levels.
 \emph{Crop} blanks one axis-aligned rectangle covering a fraction $f\pm0.05$ of the plan pixels, and \emph{patch} blanks whole ViT patches until they cover a fraction $f$ of the plan.
-Crop and patch act on pixels, so only the vision branch receives them.
+Only the vision branch receives these two pixel damages.
 
 \paragraph{Robustness metric.}
 We measure \emph{self-recovery}: the gallery still contains the intact source plan $q$, and the damaged query should retrieve it.
-If $q$ appears at rank $r$ when a fraction $f$ is removed, the query scores the reciprocal rank $\mathrm{RR}(q,f)=1/r$ for $r\le100$, and 0 beyond: 1 when the source comes first, 0.5 when second, and so on.
+If $q$ appears at rank $r$ when a fraction $f$ is removed, the query scores the reciprocal rank $\mathrm{RR}(q,f)=1/r$ for $r\le100$, and 0 beyond.
 The robustness of a system on a damage is the area under its self-recovery curve over the three levels, averaged over the set of queries $Q$:
 \begin{equation}
   \begin{gathered}
@@ -30,18 +30,16 @@ The robustness of a system on a damage is the area under its self-recovery curve
   \end{gathered}
   \label{eq:auc}
 \end{equation}
-The metric follows m@B of on-the-fly sketch retrieval~\cite{bhunia2020sketchless}, the area under the curve of the reciprocal rank of the target against the fraction of the sketch drawn; here the fraction of the plan removed plays that role.
-Branches and fusions compete on room removal, the damage they share.
-To select the vision configuration we average the AUC of the three damages, so that no configuration wins by exploiting one damage.
+The metric follows m@B of on-the-fly sketch retrieval~\cite{bhunia2020sketchless}, with the fraction of the plan removed in place of the fraction of the sketch drawn.
+Branches and fusions compete on room removal, the damage they share; vision configurations are selected on the mean AUC of the three damages, so that none wins by exploiting one damage.
 We exclude $f=0$: about 3\% of the RPLAN images have a pixel-identical twin, which caps the undamaged self-recovery near 0.97 for every system.
 Self-recovery needs no relevance label, so the circularity discussed below does not affect it.
 
 \paragraph{Statistics.}
 All systems see the same queries, gallery and removed rooms, so we compare two systems $A$ and $B$ query by query.
-The \emph{paired difference} is the mean over queries of $\mathrm{AUC}_A(q)-\mathrm{AUC}_B(q)$; pairing removes the variation due to how hard each query is, which both systems share.
-To measure its uncertainty we use a percentile bootstrap: we resample the queries with replacement $B=10{,}000$ times, recompute the mean difference on each resample, and take the 2.5th and 97.5th percentiles as a 95\% interval.
-An interval that excludes zero means the difference does not depend on the particular queries we drew.
-This interval ignores the randomness of training, so we repeat the pipeline in four replicas, which change the graph training and the removed rooms.
+The \emph{paired difference} is the mean over queries of $\mathrm{AUC}_A(q)-\mathrm{AUC}_B(q)$; pairing removes the per-query difficulty both systems share.
+Its 95\% interval is a percentile bootstrap: we resample the queries with replacement $B=10{,}000$ times and take the 2.5th and 97.5th percentiles of the mean difference.
+This interval ignores the randomness of training, so we repeat the pipeline in four replicas (seeds 42, 100042, 200042 and 300042), which change the graph training and the removed rooms.
 We call an effect \emph{above the training noise} when it has the same sign in all four replicas and its mean exceeds twice its standard deviation across replicas.
 We call two systems \emph{equivalent} when the interval of their difference lies within $\pm0.005$, a margin we fixed after the first replica and before the others.
 
@@ -49,9 +47,7 @@ We call two systems \emph{equivalent} when the interval of their difference lies
 To describe what a system retrieves on complete plans, we score its ranking with nDCG@10 on three relevance axes computed from the metadata, each in $[0,1]$.
 \emph{Composition} is the weighted Jaccard similarity of the 13-bin room-type histograms; \emph{topology} is the weighted Jaccard similarity of the 91-bin histograms of adjacent type pairs; \emph{geometry} averages the similarities of footprint area, footprint aspect ratio and per-type area distribution.
 On the test split a random ranking already scores 0.740, 0.466 and 0.870 on the three axes, so we also report the gain normalised to this floor, $(s-s_0)/(1-s_0)$.
-These scores are circular for both branches and we never use them to select.
-The graph receives the room types and adjacencies that composition and topology measure, and the footprint is the union of the room boxes in every record we checked.
-The renderings encode the room types as colours, with 13 types collapsed into 6 colours.
+These scores are circular for both branches and we never use them to select: the graph receives the room types and adjacencies that composition and topology measure, the footprint is the union of the room boxes in every record we checked, and the renderings encode the 13 room types as 6 colours.
 Per-axis differences between the branches therefore compare a fine and a coarse reading of the same information.
 
 \subsection{Dataset and experimental details}
@@ -70,13 +66,11 @@ Graphs are small: 4 to 8 rooms, 6.8 on average.
 \paragraph{Protocol.}
 We make every choice (encoder configuration, checkpoint, fusion weight, control weights) on 2{,}000 validation queries drawn with a fixed seed, and evaluate on 2{,}000 test queries drawn in the same way.
 Before each test reading we wrote the hypotheses, the predicted outcomes and the decision rules, then read the test split once with all weights fixed.
-Earlier stages of the project also read the test split, with a weaker graph branch; those readings select nothing reported here, and we disclose them in \cref{sec:conclusion}.
-Replicas use seeds 42, 100042, 200042 and 300042.
+Earlier stages of the project also read the test split, with a weaker graph branch; those readings select nothing reported here (\cref{sec:conclusion}).
 
 \paragraph{Baselines.}
 \emph{hist} ranks plans by the L2 distance between room-type histograms, without training.
-\emph{LayoutGKN}~\cite{vanengelenburg2025layoutgkn} is the closest published graph method; we retrain its GKN-asym network with its upstream hyperparameters on our pairs (damaged plan, complete plan) over the whole training split for 300 epochs, with edges from the record adjacencies, and score it with our protocol.
-The same network with random weights reaches an AUC of 0.0001, so the retrained model learns the task.
+\emph{LayoutGKN}~\cite{vanengelenburg2025layoutgkn} is the closest published graph method; we retrain its GKN-asym network with its upstream hyperparameters on our pairs (damaged plan, complete plan) over the whole training split for 300 epochs, with edges from the record adjacencies, and score it with our protocol; with random weights the same network reaches an AUC of 0.0001.
 
 \subsection{Results}
 \label{sec:results}
@@ -110,8 +104,7 @@ The same network with random weights reaches an AUC of 0.0001, so the retrained 
     \bottomrule
   \end{tabular}
   \caption{\textbf{Room removal on the test split.}
-  Self-recovery per level and its AUC; the last column is the mean $\pm$ std over four replicas (graph training and removed rooms).
-  $W$ beats the retrained LayoutGKN by 0.29 AUC, and every fusion improves on $W$, almost entirely at $f=0.75$.
+  Self-recovery per level and its AUC; the last column is the mean $\pm$ std over four replicas.
   $^\dagger$One training.}
   \label{tab:main}
 \end{table}
@@ -126,16 +119,14 @@ The same network with random weights reaches an AUC of 0.0001, so the retrained 
 \end{figure*}
 
 \paragraph{A graph trained on incomplete plans comes close to the ceiling.}
-\Cref{tab:main} and \cref{fig:damage_test} report the test results.
-$W$ reaches an AUC of 0.903 and still ranks the source near the top with three quarters of the rooms removed (0.793).
+On test (\cref{tab:main,fig:damage_test}), $W$ reaches an AUC of 0.903 ($\pm0.001$ over four replicas) and still ranks the source near the top with three quarters of the rooms removed (0.793).
 Retrained on the same pairs, LayoutGKN scores 0.611, a paired difference (\cref{sec:metrics}) of $-0.292$ with 95\% interval $[-0.302, -0.282]$.
 LayoutGKN stays close to $W$ when a quarter of the rooms is missing (0.940 vs 0.963) and drops when most are missing (0.217 vs 0.793).
 The training-free histogram finds almost nothing (0.001), and the frozen vision branch reaches 0.396.
-The standard deviation of $W$ across four replicas is 0.001 on the test split, so the graph result does not depend on one training.
 
 \paragraph{Fusing with the frozen vision branch adds $+0.013$.}
-The fusion with the frozen vision branch improves on $W$ by $+0.013$ $[+0.009, +0.017]$ on the test split, with a positive interval in all four replicas ($+0.0125\pm0.0012$) and a test value within 0.006 of validation in each.
-Almost all of the gain comes at $f=0.75$ (0.832 vs 0.793), the only level where $W$ leaves room.
+The fusion with the frozen vision branch improves on $W$ by $+0.013$ $[+0.009, +0.017]$, with a positive interval in all four replicas ($+0.0125\pm0.0012$) and a test value within 0.006 of validation in each.
+Almost all of the gain comes at $f=0.75$ (0.832 vs 0.793), the only level where $W$ leaves room, as for the single-damage head (\cref{tab:main}).
 With the single-damage head the gain more than doubles, to $+0.031$ $[+0.026, +0.035]$, and with the multi-damage head the fused AUC reaches $0.940\pm0.001$.
 The fusions also exceed a per-query oracle that picks the better branch for each query (0.914, 0.920 and 0.930 against fused AUCs of 0.916, 0.934 and 0.941), because summing similarities can rank the source above both branches on the same query.
 
@@ -179,9 +170,8 @@ The fusions also exceed a per-query oracle that picks the better branch for each
 % figures/final/english/f_final_complementarity.sources.txt.
 
 \paragraph{With a strong graph, only a damage-trained vision branch adds information.}
-\Cref{tab:controls} and \cref{fig:complementarity} compare each fusion gain with the ensemble controls.
-Over four replicas, fusing $W$ with a second training of itself gains $+0.0163$ and fusing it with the SAGE graph gains $+0.0145$, both more than the frozen vision fusion ($+0.0125$).
-Over four replicas the frozen vision gain is equivalent to the SAGE control ($-0.0020$ $[-0.0045, +0.0005]$, within $\pm0.005$) and slightly below the second copy of $W$ ($-0.0038$ $[-0.0067, -0.0010]$, negative in 4/4 replicas).
+Over four replicas (\cref{tab:controls,fig:complementarity}), fusing $W$ with a second training of itself gains $+0.0163$ and fusing it with the SAGE graph gains $+0.0145$, both more than the frozen vision fusion ($+0.0125$).
+The frozen vision gain is equivalent to the SAGE control ($-0.0020$ $[-0.0045, +0.0005]$, within $\pm0.005$) and slightly below the second copy of $W$ ($-0.0038$ $[-0.0067, -0.0010]$, negative in 4/4 replicas).
 The single-damage head exceeds both controls by $+0.012$ $[+0.008, +0.015]$ and $+0.013$ $[+0.011, +0.016]$, and the multi-damage head by $+0.020$ $[+0.017, +0.023]$ and $+0.022$ $[+0.019, +0.025]$, all positive in 4/4 replicas and above the training noise.
 The single-damage result was a pre-registered confirmatory test on seed 42 ($+0.014$ $[+0.008, +0.020]$ and $+0.015$ $[+0.011, +0.020]$) before the replicas.
 Even when the complementarity gain is positive, the control accounts for 32--58\% of the fusion gain, so reporting the raw gain overstates the contribution of the image by about a factor of two.
@@ -201,8 +191,7 @@ Even when the complementarity gain is positive, the control accounts for 32--58\
 % figures/final/english/f_final_curve.sources.txt (historical point valid 0.4562, +0.1740).
 
 \paragraph{The gain depends on the relative strength of the branches.}
-\Cref{fig:curve} fuses the 37 graphs of the configuration search, from the weakest to $W$, with the two vision branches.
-The gain follows an inverted U.
+Fusing the 37 graphs of the configuration search, from the weakest to $W$, with the two vision branches, the gain follows an inverted U (\cref{fig:curve}).
 With graphs weaker than the vision branch it grows with the graph; it peaks when the branches are equally strong ($+0.198$ on test for a graph at 0.404 with the frozen vision branch); it shrinks as the graph approaches the ceiling ($+0.054$ at 0.753, $+0.013$ for $W$).
 An earlier version of our pipeline used a graph at 0.456 on validation and measured a fusion gain of $+0.174$; that point lies on the same curve, so the large historical gain and the small gain with $W$ do not contradict each other.
 Against the frozen branch, the single-damage head lowers the gain with the two weakest graphs ($-0.019$ at 0.168, pre-registered; $-0.020$ at 0.404, descriptive), because there the head is the better branch and raises by about 0.13 the reference the gain is measured from; it raises the gain with the stronger graphs ($+0.071$ at 0.513, $+0.066$ at 0.753, $+0.018$ with $W$).
@@ -223,8 +212,7 @@ With graphs as strong as the vision branch, even the frozen vision branch passes
 % figures/final/english/f_final_complementarity_where.sources.txt.
 
 \paragraph{The image helps where the graph has little left.}
-\Cref{fig:where} locates the complementarity gain of the fusions with $W$ on the test split.
-With a quarter or half of the rooms removed the CG is zero for all three vision branches, with intervals that contain zero; at $f=0.75$ it reaches $+0.046$ $[+0.031, +0.061]$ for the single-damage head and $+0.071$ $[+0.054, +0.087]$ for the multi-damage head.
+On test (\cref{fig:where}), with a quarter or half of the rooms removed the CG is zero for all three vision branches, with intervals that contain zero; at $f=0.75$ it reaches $+0.046$ $[+0.031, +0.061]$ for the single-damage head and $+0.071$ $[+0.054, +0.087]$ for the multi-damage head.
 On the 639 of 2{,}000 queries where $W$ misses the first rank at some level, the heads gain $+0.052$ and $+0.073$ over the SAGE control, while the frozen branch gains $+0.004$ $[-0.007, +0.016]$.
 On the 154 plans with at most five rooms the CG grows to $+0.067$ and $+0.103$, and the frozen branch also exceeds zero ($+0.028$ $[+0.002, +0.053]$).
 We expected a larger CG for plans that share their room graph with many others; the data refute it.
@@ -257,8 +245,7 @@ With a graph near the ceiling, a frozen image encoder adds no more than a second
     \bottomrule
   \end{tabular}
   \caption{\textbf{Graph configuration search (validation, room-removal AUC, mean $\pm$ std over 4 seeds).}
-  Each row changes one factor of the reference; the last row combines, per encoder, the changes that improved robustness in 4/4 seeds.
-  The GATv2 combination is $W$.}
+  Each row changes one factor of the reference; the last row combines, per encoder, the changes that improved in 4/4 seeds (GATv2: $W$).}
   \label{tab:ablation_graph}
 \end{table}
 
@@ -298,8 +285,8 @@ The most robust graphs are not the best on complete plans: on validation the GCN
     \bottomrule
   \end{tabular}
   \caption{\textbf{Vision branch.}
-  (a) Best configuration per encoder, with and without whitening. (b) The single-damage head gains on the damage it trains on and loses on the other two; the multi-damage head gains on all three.
-  Standalone runs of each branch: room-removal values differ from \cref{tab:main} by at most 0.0004, because near-identical plans break ties differently.}
+  (a) Best configuration per encoder, with and without whitening.
+  (b) Standalone runs of each branch: room-removal values differ from \cref{tab:main} by at most 0.0004, because near-identical plans break ties differently.}
   \label{tab:ablation_vision}
 \end{table}
 
@@ -309,13 +296,13 @@ The most robust graphs are not the best on complete plans: on validation the GCN
 % 0.5328 at the fusion extreme (test_summary.csv), tie-breaking between runs, PAPER.md:986-987, :1129-1131.
 
 \paragraph{Vision branch.}
-Whitening improves robustness in all 26 encoder, pooling and resolution settings (\cref{tab:ablation_vision}a): without it the descriptors of the synthetic renderings collapse and damaged queries match almost any plan.
+Whitening improves robustness in all 26 encoder, pooling and resolution settings (\cref{tab:ablation_vision}a): without it the frozen descriptors of the synthetic renderings collapse into a narrow cone and damaged queries match almost any plan.
 The choice of encoder matters more than pooling or resolution, and newer or larger encoders do not win: TIPSv2, the best encoder on complete plans in our benchmark, ranks sixth under damage, and the ViT-H I-JEPA trails two ViT-B models.
-The best configuration on each single damage changes from damage to damage, which is why we select on their average.
+The best configuration changes from damage to damage, hence selection on their average.
 The multi-damage head reaches a mean AUC of 0.715 on the three test damages against 0.521 for the frozen branch, and improves each damage with a positive interval (\cref{tab:ablation_vision}b).
 
 \paragraph{Negative results.}
-We report the outcomes that contradicted our expectations, because each one changed the protocol.
+Each of these outcomes changed the protocol.
 \emph{(i) A head learns the damage it sees.}
 The single-damage head improves room removal by $+0.136$ on test and loses $-0.139$ on crop and $-0.101$ on patch, a pre-registered transfer hypothesis that we refuted on two encoders.
 \emph{(ii) A rendering artifact inflated the vision robustness.}
@@ -336,10 +323,8 @@ In the second round, 43 of 45 pre-registered predictions held, and the two failu
 % Sources: figures/final/english/f_final_teaser_valid.sources.txt (query 10071, 34 queries,
 % head >100, W 2nd, fusion 1st); results/csv_final/test_summary.csv (full-plan nDCG@10).
 
-\Cref{fig:teaser} shows a validation query with half of its rooms removed.
-$W$ ranks first a near-identical plan and the source second; the single-damage head misses the source in its top 100; the fusion ranks the source first.
-Its top-5 lists show the mechanism we observe across queries: one branch keeps the source near the top, and the other demotes the competitors that outrank it.
+In \cref{fig:teaser} the single-damage head misses the source in its top 100, and the top-5 lists show the mechanism we observe across queries: one branch keeps the source near the top, and the other demotes the competitors that outrank it.
 On complete plans the fusions change little.
 On test, the frozen fusion scores 0.825, 0.662 and 0.953 nDCG@10 on composition, topology and geometry, against 0.818, 0.651 and 0.949 for $W$.
 The fusion thus covers 33\%, 37\% and 64\% of the room above the random floor.
-These per-axis numbers are circular and descriptive, and they show that complete-plan retrieval is far from solved even when self-recovery is near the ceiling.
+Though circular and descriptive, these numbers show that complete-plan retrieval is far from solved even when self-recovery is near the ceiling.

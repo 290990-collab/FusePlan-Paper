@@ -5,10 +5,8 @@
   \centering
   \includegraphics[width=\textwidth]{figures/english/f_final_pipeline_readme.pdf}
   \caption{\textbf{FusePlan pipeline.}
-  The vision branch embeds the rendered plan with a frozen encoder and whitening; the graph branch embeds the room graph with a GNN trained to map partial plans onto complete ones.
-  Late fusion concatenates the two unit vectors with weights $\sqrt{\alpha}$ and $\sqrt{1-\alpha}$ ($\alpha=0.4$ with the frozen branch, chosen on validation), so one inner product scores both.
-  The damage-trained vision variants (\cref{sec:method_vision}) add a trained head to the vision branch and choose their own $\alpha$ with the same rule.
-  An exact inner-product FAISS search ranks the gallery of 67{,}405 plans with the fused vector; each branch alone is searched the same way, with the same queries and removed rooms.}
+  The vision branch embeds the rendered plan with a frozen encoder and whitening, optionally followed by a damage-trained head (\cref{sec:method_vision}); the graph branch embeds the room graph with a GNN trained to map partial plans onto complete ones.
+  Late fusion concatenates the two unit vectors with weights $\sqrt{\alpha}$ and $\sqrt{1-\alpha}$ ($\alpha=0.4$ with the frozen branch, chosen on validation), so one exact inner-product FAISS search ranks the gallery of 67{,}405 plans; each branch alone is searched the same way.}
   \label{fig:pipeline}
 \end{figure*}
 
@@ -27,7 +25,7 @@ Let $\mathcal{G}$ be a gallery of floor plans, each available as a rendered imag
 A query $\tilde{q}$ is a plan $q\in\mathcal{G}$ with part of its content removed (\cref{sec:metrics}).
 The task asks for a ranking of the whole gallery that places the source plan $q$ as high as possible.
 A vision encoder maps a plan to a unit vector $v$ ($v\in\mathbb{R}^{768}$ for the frozen branch, $\mathbb{R}^{256}$ for the single-damage head of \cref{sec:method_vision}) and a graph encoder maps it to a unit vector $g\in\mathbb{R}^{128}$, the size shared by every graph encoder we train.
-Both branches index the same gallery and receive the same damaged queries, so we compare branches and fusions query by query (\cref{fig:pipeline}).
+Both branches index the same gallery of complete plans and recompute each query vector from the \emph{same} removed rooms, so we compare branches and fusions query by query (\cref{fig:pipeline}).
 
 \subsection{Late fusion and ensemble controls}
 \label{sec:method_fusion}
@@ -41,20 +39,15 @@ The fused descriptor concatenates the two L2-normalised vectors with a single we
   \end{gathered}
   \label{eq:fusion}
 \end{equation}
-where $\langle\cdot,\cdot\rangle$ is the inner product, equal to the cosine similarity for unit vectors.
-Hence $\lVert z\rVert=1$, and one exact inner-product FAISS search over the concatenated vectors (896-d with the frozen branch) ranks the gallery by a weighted average of the vision and graph cosine similarities, with weights $\alpha$ and $1-\alpha$.
-At $\alpha=1$ and $\alpha=0$ the fusion reproduces the two branches, which we use as a correctness check.
-For a damaged query, both branches recompute the query vector from the \emph{same} removed rooms; gallery vectors always describe complete plans.
-We choose $\alpha$ on the validation split over $\{0, 0.1, \dots, 1\}$ with a rule fixed before the runs.
-The criterion is the robustness to room removal (\cref{sec:metrics}), the only damage both branches can receive.
-Neighbouring weights often score almost the same, so the arg-max would pick one of them by chance.
-We therefore compare every $\alpha$ with the best one on the same queries: when the 95\% bootstrap interval of their paired difference contains zero (\cref{sec:metrics}), the two count as tied, and we take the median of the tied values (of two central values, the one closer to 0.5).
+where $\langle\cdot,\cdot\rangle$ equals the cosine similarity for unit vectors.
+Hence $\lVert z\rVert=1$, and one exact inner-product FAISS search over the concatenated vectors (896-d with the frozen branch) ranks the gallery by the weighted cosine similarities; at $\alpha=1$ and $\alpha=0$ it reproduces the two branches, a correctness check.
+We choose $\alpha$ on validation over $\{0, 0.1, \dots, 1\}$ with a rule fixed before the runs, on the robustness to room removal (\cref{sec:metrics}), the only damage both branches receive.
+Since neighbouring weights often score almost the same, an arg-max would pick among them by chance: every $\alpha$ whose paired difference with the best has a 95\% bootstrap interval containing zero (\cref{sec:metrics}) counts as tied, and we take the median of the tied values (of two central values, the one closer to 0.5).
 For $W$ with the frozen vision branch, 0.3 and 0.4 tie in all four replicas and the rule gives $\alpha^*=0.4$; every other fusion selects its own weight with the same rule (the graphs of \cref{fig:curve} on the coarser grid $\{0, 0.2, \dots, 1\}$), and the test split uses the weights fixed on validation.
-The fusion is static: every query uses the same $\alpha$, and no gate adapts the weight to the single query, for instance to how much of it is missing.
+The fusion is static: no gate adapts $\alpha$ to the single query, for instance to how much of it is missing.
 
 \paragraph{Ensemble controls.}
-Fusing any two models with partly independent errors raises retrieval accuracy, so a fusion gain alone does not show that the image carries information the graph lacks.
-We therefore compare every vision--graph fusion with two \emph{ensemble controls} that fuse the graph with a second model holding the \emph{same} information: a second training of the same graph configuration (different initialisation and batches), and a graph encoder of another family trained with the same recipe.
+We compare every vision--graph fusion with two \emph{ensemble controls} that fuse the graph with a second model holding the \emph{same} information: a second training of the same graph configuration (different initialisation and batches), and a graph encoder of another family trained with the same recipe.
 Each control selects its own weight on validation with the rule above.
 For a fusion $F$ of branches $A$ and $B$, the per-query gain is $\mathrm{gain}_F(q)=\mathrm{AUC}_F(q)-\mathrm{AUC}_{b}(q)$, where $b$ is the branch with the higher mean AUC.
 
@@ -66,8 +59,7 @@ We call \emph{complementarity gain} the part of a vision--graph gain that no sec
 \end{equation}
 where $C^\star$ is the ensemble control with the larger mean gain, a conservative choice.
 We compute CG query by query, on the same queries for both fusions, with a 95\% bootstrap interval (\cref{sec:metrics}).
-$\mathrm{CG}>0$ means the vision branch contributes information beyond an ensemble effect; the remaining part $\overline{\mathrm{gain}}_{C^\star}$ is what a second graph model would already deliver.
-The two parts come from different fusions, so they summarise the gain and do not split one fusion additively.
+The remaining part $\overline{\mathrm{gain}}_{C^\star}$ is what a second graph model would already deliver; the two parts come from different fusions, so they summarise the gain and do not split one fusion additively.
 
 \subsection{Graph branch}
 \label{sec:method_graph}
@@ -84,16 +76,14 @@ A linear layer projects the result to 128 dimensions, followed by L2 normalisati
 
 \paragraph{Training for incompleteness.}
 We train with the symmetric InfoNCE loss~\cite{oord2019cpc}, in-batch negatives, temperature $\tau=0.1$, batch size 256, learning rate $10^{-3}$, weight decay $10^{-5}$ and no dropout, on the training split only.
-Positive pairs are \emph{asymmetric}: one view is the complete plan, the other removes a fraction $f\sim\mathcal{U}[0.25,0.75]$ of its rooms together with their edges.
-The pair thus asks the encoder to map a partial plan onto its complete version, the retrieval task itself.
+Positive pairs are \emph{asymmetric}, matching the retrieval task: one view is the complete plan, the other removes a fraction $f\sim\mathcal{U}[0.25,0.75]$ of its rooms together with their edges.
 We select the checkpoint on retrieval, not on the loss: after each epoch we measure the robustness to room removal on 2{,}000 validation queries disjoint from the evaluation queries, with the whole gallery, over 600 epochs.
 The selected epoch falls between 550 and 592 in all four replicas, so the reported robustness of the graph is a lower bound.
 
 \paragraph{Configuration search.}
 We chose $W$ with the same recipe for GCN~\cite{kipf2017gcn}, GraphSAGE~\cite{hamilton2017graphsage} and GATv2.
 Starting from a reference configuration per encoder, we changed one factor at a time: temperature, skip connection, rotation and reflection augmentation, a lost-neighbour marker, depth, width, pooling, aggregator and attention heads.
-We then combined the changes that improved robustness in all four seeds.
-We train each of the 37 candidates with 4 seeds and score it on validation only (\cref{tab:ablation_graph}).
+We then combined the changes that improved robustness in all four seeds; each of the 37 candidates trains with 4 seeds and is scored on validation only (\cref{tab:ablation_graph}).
 $W$ is the combination for GATv2: $\tau=0.1$, no rotations or reflections, three layers, width 256 and one head.
 
 \subsection{Vision branch}
@@ -103,13 +93,11 @@ $W$ is the combination for GATv2: $\tau=0.1$, no rotations or reflections, three
 The vision branch uses the spatially aligned Perception Encoder~\cite{bolya2025perception} (PE-Spatial, ViT-B/16) without training.
 We resize the rendered plan so that its longer side has 224 pixels, keeping the aspect ratio, and pad it to a square with the white background.
 The descriptor is the generalised mean (GeM~\cite{radenovic2019gem}) with $p=3$ of the last-layer patch tokens $x_1,\dots,x_N$, computed per channel as $\bigl(\tfrac{1}{N}\sum_i \max(x_i,\epsilon)^p\bigr)^{1/p}$ with $\epsilon=10^{-6}$.
-The clamp at $\epsilon$ comes from the standard GeM implementation, designed for CNN activations that are non-negative after the ReLU.
-ViT tokens after the final LayerNorm are signed, so here the clamp zeroes their negative components and the descriptor pools only the positive part of each channel.
+The clamp, inherited from the standard GeM implementation for non-negative post-ReLU CNN activations, zeroes the negative components of the signed ViT tokens after the final LayerNorm, so the descriptor pools only the positive part of each channel.
 
 \paragraph{Whitening and indexing.}
 We apply PCA whitening~\cite{jegou2012whitening}: mean and covariance come from training-split plans only, and every descriptor $x$ maps to $\Lambda^{-1/2}U^\top(x-\mu)$, keeping all 768 components, followed by L2 normalisation.
 An exact inner-product FAISS index~\cite{douze2025faiss} stores the gallery.
-Whitening matters because the frozen descriptors of the synthetic renderings collapse into a narrow cone; it improves robustness in all 26 encoder, pooling and resolution settings we tested (\cref{tab:ablation_vision}).
 PE-Spatial with this pooling and whitening is the most robust of 52 frozen configurations over 8 encoders~\cite{oquab2024dinov2,simeoni2025dinov3,tschannen2025siglip2,ranzinger2024amradio,assran2023ijepa,cao2026tipsv2,bolya2025perception}, selected on validation.
 
 \paragraph{Damage-trained heads.}

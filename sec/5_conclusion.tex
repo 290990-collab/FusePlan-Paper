@@ -9,8 +9,8 @@ Ensemble controls make this visible, and the complementarity gain gives it a num
 We recommend reporting fusion gains next to ensemble controls whenever two branches see related information.
 
 \paragraph{Limitations.}
-We use RPLAN only, with synthetic damages: a removed room leaves the outline of its hole in the image, and crop and patch reach only the vision branch, so we compare branches and fusions on room removal alone.
-The graph comes from exact records, not from parsed images, and the renderings encode room types as colours, so both branches read the same information at different granularity and every per-axis relevance score is circular.
+We use RPLAN only, with synthetic damages: a removed room leaves the outline of its hole in the image, and branches and fusions compete on room removal alone.
+The graph comes from exact records, not from parsed images, so every per-axis relevance score is circular (\cref{sec:metrics}).
 Training budgets bind: $W$ selects epochs 550--592 of 600 and LayoutGKN, trained once with upstream hyperparameters, stops at 300, so both robustness values are lower bounds.
 The fusion uses one global weight; a per-query gate remains untested, although a hard gate cannot exceed the per-query oracle, which the static fusion already exceeds.
 We trained the multi-damage head once and judged it only on the damages it trained on.

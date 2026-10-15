@@ -11,19 +11,18 @@ LayoutGMN~\cite{patil2021layoutgmn} learns it with an attention-based graph matc
 SSIG~\cite{vanengelenburg2023ssig} combines IoU with a graph edit distance into a metric that needs no learning.
 LayoutGKN~\cite{vanengelenburg2025layoutgkn} moves the cross-graph interaction to a graph kernel on the final room embeddings, trained on RPLAN with a target based on graph edit distance.
 Unit Region Encoding~\cite{zhang2025urenet} learns a compact geometry-aware representation from rasterised plans.
-These methods compare complete plans and evaluate on triplets or within the top results of the model; we rank the whole gallery from incomplete queries, and we retrain LayoutGKN on our task as a baseline.
+All compare complete plans and evaluate on triplets or within their own top results; we rank the whole gallery from incomplete queries and retrain LayoutGKN on our task as a baseline.
 
 \paragraph{Incomplete queries.}
-On-the-fly sketch retrieval~\cite{bhunia2020sketchless} retrieves a photo from a sketch that grows stroke by stroke and scores the area under the reciprocal-rank curve over completeness levels; our robustness AUC follows the same scheme, with a query that loses rooms or pixels and stays in the gallery modality.
+On-the-fly sketch retrieval~\cite{bhunia2020sketchless} retrieves a photo from a sketch that grows stroke by stroke and scores the area under the reciprocal-rank curve over completeness levels; our robustness AUC follows this scheme, with a query that loses rooms or pixels and stays in the gallery modality.
 For floor plans, partial inputs appear in generation: Graph2Plan~\cite{hu2020graph2plan} retrieves RPLAN layout graphs that match a boundary and user constraints with hand-written rules, and SketchPlan within PlanCraft~\cite{zeng2026plancraft} replays the drawing process of RPLAN plans to produce partial sketches at several completeness levels.
 
 \paragraph{Multimodal floor-plan representations.}
 CrossOver~\cite{sarkar2025crossover} aligns RGB images, point clouds, CAD models, floor plans and text of 3D scenes in one embedding space and tolerates missing modalities.
 MMFE~\cite{anadon2026mmfe} maps floor plans of different modalities into a shared dense grid with a frozen DINOv3 backbone and a trained head.
-Both learn the fusion end to end and report the fused accuracy.
-Our fusion is a weighted sum of two cosine similarities, and our question is how much of its gain comes from information that only the image holds; ensemble controls answer it without changing the fusion.
+Both learn the fusion end to end and report the fused accuracy; our fusion is a weighted sum of two cosine similarities, and ensemble controls measure how much of its gain comes from information only the image holds.
 
 \paragraph{Encoders.}
 We propose no new encoder: both branches select among published ones.
-Frozen general-purpose encoders are the natural starting point on a new image domain, and we compare self-supervised encoders (DINOv2~\cite{oquab2024dinov2}, DINOv3~\cite{simeoni2025dinov3}), the predictive I-JEPA~\cite{assran2023ijepa}, vision--language encoders (SigLIP~2~\cite{tschannen2025siglip2}, TIPSv2~\cite{cao2026tipsv2}), the agglomerative C-RADIO~\cite{ranzinger2024amradio} and the Perception Encoder~\cite{bolya2025perception} in its contrastive and spatially aligned variants, with generalised-mean pooling~\cite{radenovic2019gem}, PCA whitening~\cite{jegou2012whitening} and exact search with FAISS~\cite{douze2025faiss}.
+For the frozen vision branch we compare self-supervised encoders (DINOv2~\cite{oquab2024dinov2}, DINOv3~\cite{simeoni2025dinov3}), the predictive I-JEPA~\cite{assran2023ijepa}, vision--language encoders (SigLIP~2~\cite{tschannen2025siglip2}, TIPSv2~\cite{cao2026tipsv2}), the agglomerative C-RADIO~\cite{ranzinger2024amradio} and the Perception Encoder~\cite{bolya2025perception} in its contrastive and spatially aligned variants, with generalised-mean pooling~\cite{radenovic2019gem}, PCA whitening~\cite{jegou2012whitening} and exact search with FAISS~\cite{douze2025faiss}.
 On the graph side we compare GCN~\cite{kipf2017gcn}, GraphSAGE~\cite{hamilton2017graphsage} and GATv2~\cite{brody2022gatv2}, trained with InfoNCE~\cite{oord2019cpc} on pairs that match a partial plan with its complete version.

@@ -4,8 +4,7 @@
 Architects often search for floor plans starting from an incomplete layout, yet floor-plan retrieval methods train and evaluate on complete plans.
 We study retrieval from incomplete queries on RPLAN with FusePlan, which fuses a graph branch and a vision branch over the same gallery of 67{,}405 plans.
 The graph branch, a GATv2 encoder trained to map plans with rooms removed onto complete plans, recovers the source plan with an AUC of 0.903 on the test split (the reciprocal rank of the source averaged over three fractions of removed rooms; 1 means always first), against 0.611 for LayoutGKN retrained on the same task.
-A fusion gain alone does not show that the image adds information, because fusing any two models helps.
-We therefore compare each fusion with ensemble controls that fuse the graph with a second graph model, and define the complementarity gain as the part of the gain the controls do not reach.
+Because fusing any two models helps, we compare each fusion with ensemble controls that fuse the graph with a second graph model, and define the complementarity gain as the part of the gain the controls do not reach.
 With this strong graph, a frozen image encoder adds $+0.013$ AUC and no complementarity gain, while vision heads trained on the damage pass both controls by $+0.012$ to $+0.022$ over four replicas.
 The fusion gain peaks when the two branches are equally strong, and the image helps most where the graph keeps few rooms.
 We make every choice on the validation split and read the test split with pre-registered predictions.
