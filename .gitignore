@@ -9,11 +9,3 @@
 *.fdb_latexmk
 *.synctex.gz
 *.brf
-
-# Downloaded skill sources, integrated in .claude/skills/ and .aris/
-paper-skills/
-
-# ARIS runtime state (traces, cache, runs); only the helpers are committed
-.aris/*
-!.aris/tools/
-!.aris/LICENSE
