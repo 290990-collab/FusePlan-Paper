@@ -8,12 +8,11 @@ Giuseppe Angelillis, Enrico Di Maria, Gabriele Germini<br>
 University of Modena and Reggio Emilia
 
 [![Paper](https://img.shields.io/badge/Paper-PDF-1f4e9c?style=for-the-badge)](main.pdf)
-[![Slides](https://img.shields.io/badge/Slides-PDF-1f4e9c?style=for-the-badge)](presentation.pdf)
 [![Code](https://img.shields.io/badge/Code-FusePlan-24292f?style=for-the-badge&logo=github)](https://github.com/290990-collab/FusePlan)
 
 </div>
 
-This repository contains the paper we wrote on the FusePlan project (LaTeX source in CVPR 2026 format and compiled PDF), together with the slides and the notes for the talk. The code, the configurations and the experiments are in the project repository, [290990-collab/FusePlan](https://github.com/290990-collab/FusePlan).
+This repository contains the paper we wrote on the FusePlan project (LaTeX source in CVPR 2026 format and compiled PDF). The code, the configurations and the experiments are in the project repository, [290990-collab/FusePlan](https://github.com/290990-collab/FusePlan).
 
 ## In short
 
@@ -91,8 +90,6 @@ main.tex, preamble.tex, sec/          LaTeX source (CVPR 2026 template)
 figures/english/                      figures used in the paper
 main.bib, cvpr.sty, *.bst             references and style files
 main.pdf                              compiled paper
-presentation.pdf                      slides
-script.pdf                            notes for the talk
 assets/                               images for this README
 ```
 
